@@ -32,9 +32,12 @@ class ArticleInfoParser():
     def _istitle(self, elem):
         return elem.tag == self._get_qname('', 'article-title')
 
-    def _parsetitle(self, elem):
+    def _parsetext(self, elem, strip=False):
         text = ''.join(elem.itertext())
-        return text
+        return text.strip() if strip else text
+
+    def _isabstract(self, elem):
+        return elem.tag == self._get_qname('', 'abstract')
 
     def parse(self, xml):
         context = etree.iterparse(xml, events=self._parseevents)
@@ -49,7 +52,9 @@ class ArticleInfoParser():
                 if self._isarticleid(elem):
                     info['ids'].append(self._parsearticleid(elem))
                 if self._istitle(elem):
-                    info['title'] = self._parsetitle(elem)
+                    info['title'] = self._parsetext(elem)
+                if self._isabstract(elem):
+                    info['abstract'] = self._parsetext(elem, strip=True)
                 if self._isarticle(elem):
                     yield info
                     elem.clear()
