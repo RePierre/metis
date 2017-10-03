@@ -5,6 +5,40 @@ from pprint import pprint
 import xml.etree.ElementTree as etree
 
 
+class ArticleSection():
+    """Represents an article section
+
+    """
+
+    def __init__(self):
+        self._title = None
+        self._text = None
+
+    @property
+    def title(self):
+        return self._title
+
+    @title.setter
+    def title(self, value):
+        self._title = value
+
+    @property
+    def text(self):
+        return self._text
+
+    @text.setter
+    def text(self, value):
+        value = value.strip()
+        if self.title is not None:
+            self._text = value.replace(self.title, '', 1)
+        else:
+            self._text = value
+
+    def asdictionary(self):
+        return {'title': self.title if self.title is not None else '',
+                'text': self.text}
+
+
 class ArticleInfoParser():
     """Parses article info
     """
@@ -56,7 +90,10 @@ class ArticleInfoParser():
                 self._nsmap[ns] = url
             if event == 'start':
                 if self._isarticle(elem):
-                    info = {'ids': []}
+                    info = {'ids': [],
+                            'sections': []}
+                if self._issection(elem):
+                    section = ArticleSection()
             if event == 'end':
                 if self._isarticleid(elem):
                     info['ids'].append(self._parsearticleid(elem))
@@ -64,6 +101,11 @@ class ArticleInfoParser():
                     info['title'] = self._parsetext(elem)
                 if self._isabstract(elem):
                     info['abstract'] = self._parsetext(elem, strip=True)
+                if self._issectiontitle(elem):
+                    section.title = self._parsetext(elem)
+                if self._issection(elem):
+                    section.text = self._parsetext(elem, strip=True)
+                    info['sections'].append(section.asdictionary())
                 if self._isarticle(elem):
                     yield info
                     elem.clear()
