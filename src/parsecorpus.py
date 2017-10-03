@@ -1,48 +1,63 @@
 #!/usr/bin/env python3
 import sys
 import csv
+from pprint import pprint
 import xml.etree.ElementTree as etree
 
 
-def get_qualified_name(ns, tag, nsmap):
-    url = nsmap[ns]
-    name = '{' + url + '}' + tag
-    return name
+class ArticleInfoParser():
+    """Parses article info
+    """
 
+    def __init__(self):
+        self._nsmap = {}
+        self._parseevents = ['start-ns', 'start', 'end']
 
-def get_article_info(article, nsmap):
-    front = article.find(get_qualified_name('', 'front', nsmap))
-    article_meta = front.find(get_qualified_name('', 'article-meta', nsmap))
-    title_group = article_meta.find(get_qualified_name('', 'title-group', nsmap),
-                                    namespaces=nsmap)
-    for id in article_meta.findall(get_qualified_name('', 'article-id', nsmap),
-                                   namespaces=nsmap):
-        idtype = id.get('pub-id-type')
-        for title in title_group.findall(get_qualified_name('', 'article-title', nsmap),
-                                         namespaces=nsmap):
-            yield (idtype, id.text, title.text)
+    def _get_qname(self, nsprefix, tag):
+        url = self._nsmap[nsprefix]
+        name = '{' + url + '}' + tag
+        return name
 
+    def _isarticle(self, elem):
+        return elem.tag == self._get_qname('', 'article')
 
-def parse(xml):
-    nsmap = {}
-    context = etree.iterparse(xml, events=['end', 'start-ns'])
-    for event, elem in context:
-        if event == 'start-ns':
-            ns, url = elem
-            nsmap[ns] = url
-        if event == 'end':
-            if elem.tag == get_qualified_name('', 'article', nsmap):
-                for tuple in get_article_info(elem, nsmap):
-                    yield tuple
-                elem.clear()
+    def _isarticleid(self, elem):
+        return elem.tag == self._get_qname('', 'article-id')
 
+    def _parsearticleid(self, elem):
+        idtype = elem.get('pub-id-type')
+        id = elem.text
+        return (id, idtype)
 
-def main(inputfile, outputfile):
-    with open(outputfile, 'wt') as f:
-        writer = csv.writer(f, delimiter='\t')
-        for item in parse(inputfile):
-            writer.writerow(item)
+    def _istitle(self, elem):
+        return elem.tag == self._get_qname('', 'article-title')
+
+    def _parsetitle(self, elem):
+        text = ''.join(elem.itertext())
+        return text
+
+    def parse(self, xml):
+        context = etree.iterparse(xml, events=self._parseevents)
+        for event, elem in context:
+            if event == 'start-ns':
+                ns, url = elem
+                self._nsmap[ns] = url
+            if event == 'start':
+                if self._isarticle(elem):
+                    info = {'ids': []}
+            if event == 'end':
+                if self._isarticleid(elem):
+                    info['ids'].append(self._parsearticleid(elem))
+                if self._istitle(elem):
+                    info['title'] = self._parsetitle(elem)
+                if self._isarticle(elem):
+                    yield info
+                    elem.clear()
 
 
 if __name__ == '__main__':
-    main(sys.argv[1], sys.argv[2])
+    inputfile = sys.argv[1]
+    # outputfile = sys.argv[2]
+    parser = ArticleInfoParser()
+    for d in parser.parse(inputfile):
+        pprint(d)
