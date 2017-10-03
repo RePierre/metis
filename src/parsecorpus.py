@@ -18,11 +18,14 @@ class ArticleInfoParser():
         name = '{' + url + '}' + tag
         return name
 
+    def _is(self, elem, name, ns=''):
+        return elem.tag == self._get_qname(ns, name)
+
     def _isarticle(self, elem):
-        return elem.tag == self._get_qname('', 'article')
+        return self._is(elem, 'article')
 
     def _isarticleid(self, elem):
-        return elem.tag == self._get_qname('', 'article-id')
+        return self._is(elem, 'article-id')
 
     def _parsearticleid(self, elem):
         idtype = elem.get('pub-id-type')
@@ -30,14 +33,20 @@ class ArticleInfoParser():
         return (id, idtype)
 
     def _istitle(self, elem):
-        return elem.tag == self._get_qname('', 'article-title')
+        return self._is(elem, 'article-title')
 
     def _parsetext(self, elem, strip=False):
         text = ''.join(elem.itertext())
         return text.strip() if strip else text
 
     def _isabstract(self, elem):
-        return elem.tag == self._get_qname('', 'abstract')
+        return self._is(elem, 'abstract')
+
+    def _issection(self, elem):
+        return self._is(elem, 'sec')
+
+    def _issectiontitle(self, elem):
+        return self._is(elem, 'title')
 
     def parse(self, xml):
         context = etree.iterparse(xml, events=self._parseevents)
