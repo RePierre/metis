@@ -16,7 +16,7 @@ tests_requires = [
 ]
 
 setup(
-    name='data_backend',
+    name='data_pipeline',
     version=version,
     description="Packages for data pipeline.",
     long_description="",
