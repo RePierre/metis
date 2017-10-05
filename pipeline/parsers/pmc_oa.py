@@ -1,13 +1,9 @@
 import os
 import json
 import collections
-import unicodedata
-import html
-from lxml import etree
 import gzip
 import argparse
 import logging
-from io import StringIO, BytesIO
 import xmltodict as xd
 
 LOG = logging.getLogger(__name__)
@@ -116,19 +112,20 @@ def parse_bodies(body):
                         elif type(item['p']) == str:
                             sec_d['text'] += item['p']
                     elif type(item) == list:
-                        sec_d['text'] += v
+                        for it in item:
+                            if '#text' in item:
+                                sec_d['text'] += it['#text']
                 elif 'sec' in item:
                     for sec_item in item['sec']:
                         if type(sec_item) == collections.OrderedDict and sec_item.get('p'):
-                            if '#text' in sec_item.get('p'):
+                            if '#text' in sec_item['p']:
                                 sec_d['text'] += sec_item['p']['#text']
-                            else:
-                                if type(sec_item['p']) == list:
-                                    for it in sec_item['p']:
-                                        if '#text' in it:
-                                            sec_d['text'] += it['#text']
-                                elif type(sec_item['p']) == str:
-                                    sec_d['text'] += sec_item['p']
+                            elif type(sec_item['p']) == list:
+                                for it in sec_item['p']:
+                                    if '#text' in it:
+                                        sec_d['text'] += it['#text']
+                            elif type(sec_item['p']) == str:
+                                sec_d['text'] += sec_item['p']
                         elif type(sec_item) == list:
                             for item in sec_item:
                                 if '#text' in item:
@@ -164,14 +161,14 @@ def parse_files(xml_path):
                     pub_xml = gzip_file.read()
                     pub_dict = xd.parse(pub_xml)
                     raw_pubs.append(pub_dict)
-    s_pubs = to_structured_data(raw_pubs, xpaths)
+                s_pubs = to_structured_data(raw_pubs, xpaths)
 
-    for idx, p in enumerate(s_pubs):
-        s_pubs[idx]['authors']  = parse_authors([a for a in p['authors']] if p['authors'] else [])
-        s_pubs[idx]['keywords'] = parse_keywords(p['keywords'])
-        s_pubs[idx]['abstract'] = parse_abstracts(p['abstract'])
-        s_pubs[idx]['body']     = parse_bodies(p['body'])
-    return s_pubs
+                for idx, p in enumerate(s_pubs):
+                    s_pubs[idx]['authors']  = parse_authors([a for a in p['authors']] if p['authors'] else [])
+                    s_pubs[idx]['keywords'] = parse_keywords(p['keywords'])
+                    s_pubs[idx]['abstract'] = parse_abstracts(p['abstract'])
+                    s_pubs[idx]['body']     = parse_bodies(p['body'])
+                    yield s_pubs[idx]
 
 
 def store_output(pubs, output_path):

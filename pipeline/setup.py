@@ -7,7 +7,8 @@ install_requires = [
     "requests",
     "python-dateutil",
     "feedparser",
-    "dict2xml"
+    "dict2xml",
+    "xmltodict"
 ]
 
 tests_requires = [
