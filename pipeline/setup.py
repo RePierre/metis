@@ -17,7 +17,7 @@ tests_requires = [
 ]
 
 setup(
-    name='data_pipeline',
+    name='pmcoa_pipeline',
     version=version,
     description="Packages for data pipeline.",
     long_description="",
