@@ -51,9 +51,10 @@ def parse_authors(authors):
     for a in authors:
         if 'sup' not in a['p'] and 'italic' in a['p']:
             items = a['p']['italic'].split(';')
-            for it in items:
+            for author_item in items:
                 a_info = dict()
-                name_items = it.strip().split(',')
+                a_info['raw'] = author_item.strip()
+                name_items    = author_item.strip().split(',')
                 a_info['name']        = name_items[0].strip()
                 a_info['affiliation'] = name_items[1].strip()
                 a_info['country']     = name_items[2].strip()
@@ -135,11 +136,20 @@ def parse_bodies(body):
     return res
 
 
+def parse_dois(identif_dict):
+    res = ''
+    for idd in identif_dict:
+        if idd['@pub-id-type'] == 'doi':
+            res = idd['#text']
+    return res
+
+
 def parse_files(xml_path):
 
     xpaths = [
         ('article_title',      'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/title-group/article-title'),
         ('journal_title',      'OAI-PMH/ListRecords/record/metadata/article/front/journal-meta/journal-title-group/journal-title'),
+        ('doi',                'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/article-id'),
         ('publisher_name',     'OAI-PMH/ListRecords/record/metadata/article/front/journal-meta/publisher/publisher-name'),
         ('publisher_location', 'OAI-PMH/ListRecords/record/metadata/article/front/journal-meta/publisher/publisher-loc'),
         ('keywords',           'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/kwd-group'),
@@ -168,6 +178,7 @@ def parse_files(xml_path):
                     s_pubs[idx]['keywords'] = parse_keywords(p['keywords'])
                     s_pubs[idx]['abstract'] = parse_abstracts(p['abstract'])
                     s_pubs[idx]['body']     = parse_bodies(p['body'])
+                    s_pubs[idx]['doi']      = parse_dois(p['doi'])
                     yield s_pubs[idx]
 
 
