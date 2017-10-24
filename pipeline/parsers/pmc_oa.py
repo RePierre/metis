@@ -31,6 +31,12 @@ class DictQuery(dict):
 
 
 def to_structured_data(raw_pubs, xpaths):
+    """
+    Convert raw dict to an easy to parse form
+    :param raw_pubs: list of raw pub dicts.
+    :param xpaths: list of xpath-like string to select the needed information.
+    :return: list of easier to parse dictionaries.
+    """
     pubs = list()
     for rp in raw_pubs:
         s_pub = dict()
@@ -63,7 +69,12 @@ def parse_authors(authors):
 
 
 def parse_keywords(keywords):
-    res = []
+    """
+    Convert raw list of keywords to a cleaned-up version.
+    :param keywords: list of raw keywords
+    :return: list of cleaned-up keywords
+    """
+    res = list()
     if keywords:
         if 'kwd' in keywords:
             res.extend(keywords['kwd'])
@@ -136,20 +147,29 @@ def parse_bodies(body):
     return res
 
 
-def parse_dois(identif_dict):
-    res = ''
+def parse_ids(identif_dict):
+    res = dict()
     for idd in identif_dict:
         if idd['@pub-id-type'] == 'doi':
-            res = idd['#text']
+            res['doi'] = idd['#text']
+        elif idd['@pub-id-type'] == 'pmcid':
+            res['pmcid'] = idd['#text']
+        elif idd['@pub-id-type'] == 'pmc-uid':
+            res['pmc-uid'] = idd['#text']
     return res
 
 
 def parse_files(xml_path):
+    """
+    Parse all .gz files to .json from a given folder
+    :param xml_path: path where .gz files are located
+    :return: Publication dictionary
+    """
 
     xpaths = [
         ('article_title',      'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/title-group/article-title'),
         ('journal_title',      'OAI-PMH/ListRecords/record/metadata/article/front/journal-meta/journal-title-group/journal-title'),
-        ('doi',                'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/article-id'),
+        ('ids',                'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/article-id'),
         ('publisher_name',     'OAI-PMH/ListRecords/record/metadata/article/front/journal-meta/publisher/publisher-name'),
         ('publisher_location', 'OAI-PMH/ListRecords/record/metadata/article/front/journal-meta/publisher/publisher-loc'),
         ('keywords',           'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/kwd-group'),
@@ -157,13 +177,16 @@ def parse_files(xml_path):
         ('authors',            'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/author-notes/fn'),
         ('acknowledgement',    'OAI-PMH/ListRecords/record/metadata/article/back/ack/p'),
         ('identifier',         'OAI-PMH/ListRecords/record/header/identifier'),
-        ('body',               'OAI-PMH/ListRecords/record/metadata/article/body/sec')
+        ('body',               'OAI-PMH/ListRecords/record/metadata/article/body/sec'),
     ]
 
     raw_pubs = list()
 
+    # iterate through all the files
     for root, dirs, files in os.walk(xml_path):
         for file in files:
+
+            # select those with wanted extension
             if file.endswith(".gz"):
                 file_path = os.path.join(root, file)
                 LOG.info('Parsing {}'.format(file_path))
@@ -171,20 +194,32 @@ def parse_files(xml_path):
                     pub_xml = gzip_file.read()
                     pub_dict = xd.parse(pub_xml)
                     raw_pubs.append(pub_dict)
+
+                # convert raw dict to an easy to parse form
                 s_pubs = to_structured_data(raw_pubs, xpaths)
 
+                # do post-processing to convert raw data in a nice, easy-to-use format
                 for idx, p in enumerate(s_pubs):
                     s_pubs[idx]['authors']  = parse_authors([a for a in p['authors']] if p['authors'] else [])
                     s_pubs[idx]['keywords'] = parse_keywords(p['keywords'])
                     s_pubs[idx]['abstract'] = parse_abstracts(p['abstract'])
                     s_pubs[idx]['body']     = parse_bodies(p['body'])
-                    s_pubs[idx]['doi']      = parse_dois(p['doi'])
+                    ids                    = parse_ids(p['ids'])
+                    s_pubs[idx].pop('ids', None)  # remove attribute when no longer needed
+                    s_pubs[idx]['doi']     = ids.get('doi')
+                    s_pubs[idx]['pmcid']   = ids.get('pmcid')
+                    s_pubs[idx]['pmc-uid'] = ids.get('pmc-uid')
+
+                    # it's a generator to reduce memory consumption
                     yield s_pubs[idx]
 
 
 def store_output(pubs, output_path):
     for idx, pub in enumerate(pubs):
-        with open(os.path.join(output_path, str(idx)+'.json'), 'w') as f:
+        assert 'pmcid' in pub, 'Pub is missing key'
+        file_path = os.path.join(output_path, '{}.json'.format(pub['pmcid']))
+        LOG.info('Storing output to file {}'.format(file_path))
+        with open(file_path, 'w') as f:
             f.write(json.dumps(pub, indent=True, sort_keys=True, ensure_ascii=False))
 
 

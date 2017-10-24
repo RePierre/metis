@@ -10,7 +10,7 @@ LOG = logging.getLogger(__name__)
 
 def csv_dict_list(grid_data_path):
     """
-    Read the GRID data from .csv to a dict of org_info items.
+    Read GRID data from .csv to a dict of org_info items.
     :param grid_data_path: Path to where GRID data is stored.
     :return: dictionary of grid info items.
     """
@@ -25,15 +25,39 @@ def csv_dict_list(grid_data_path):
     return grid_info_all
 
 
-def str_similarity_score(a, b):
+def string_similarity_score(a, b):
+    """
+    Computes similarity score between string "a" and "b".
+    :param a: arg "a" is the first of two sequences to be compared.
+    :param b: arg "b" is the second of two sequences to be compared.
+    :return: Similarity score. A value above 0.6 indicates a good similarity between the two.
+    """
     return SequenceMatcher(None, a, b).ratio()
 
+def country_name_expand(country_name):
+    if country_name == 'USA':
+        return 'United States'
+    elif country_name == 'UK':
+        return 'United Kingdom'
+    else:
+        return country_name
 
-def get_grid_info(grid_org_data, raw_string):
+def match_countries(c1, c2):
+    c1 = country_name_expand(c1)
+    c2 = country_name_expand(c2)
+    # check strings are matching
+    if c1 and c2 and c1 == c2:
+        return True
+    else:
+        return False
+
+
+def get_grid_info(grid_org_data, raw_string, country):
     """
     Retrieve GRID org info if a match was found.
     :param grid_org_data: dictionary of grid info items.
     :param raw_string: organization raw string (includes researcher name & affiliation)
+    :param country: organization country
     :return: GRID info
     """
     res = dict()
@@ -41,7 +65,7 @@ def get_grid_info(grid_org_data, raw_string):
     if raw_string:
         for k, v in grid_org_data.items():
             # As a rule of thumb, a .ratio() value over 0.6 means the sequences are close matches
-            if v['Name'] in raw_string and str_similarity_score(v['Name'], raw_string) > 0.6:
+            if v['Name'] in raw_string and string_similarity_score(v['Name'], raw_string) > 0.5 and match_countries(country, v['Country']):
                 res = v
                 break
     return res
@@ -63,7 +87,8 @@ def get_grid_enhanced_pubs(grid_org_data, input_path):
                     pub_dict = json.loads(json_file.read())
                     authors = pub_dict['authors']
                     for idx, a in enumerate(authors):
-                        pub_dict['authors'][idx]['grid_info'] = get_grid_info(grid_org_data, a.get('raw'))
+                        pub_dict['authors'][idx]['grid_info'] = get_grid_info(grid_org_data, a.get('raw'), a.get('country'))
+                    # method is a generator to optimize for memory consumption.
                     yield pub_dict
 
 
@@ -74,8 +99,11 @@ def store_pubs(pubs, output_path):
     :param output_path: path where to store .json files
     :return:
     """
-    for idx, pub in enumerate(pubs):
-        with open(os.path.join(output_path, str(idx)+'.json'), 'w') as f:
+    for pub in pubs:
+        assert pub.get('pmcid'), 'Publication is missing its pmcid'
+        file_path = os.path.join(output_path, '{}.json'.format(pub['pmcid']))
+        with open(file_path, 'w') as f:
+            LOG.info('Storing output to {}'.format(file_path))
             # ensure_ascii = False to format UTF-8 chars correctly.
             f.write(json.dumps(pub, indent=True, sort_keys=True, ensure_ascii=False))
 
