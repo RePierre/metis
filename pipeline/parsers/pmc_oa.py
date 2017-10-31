@@ -1,12 +1,11 @@
 import os
 import json
-import collections
 import gzip
 import argparse
 import logging
 import xmltodict as xd
+from articleparser import ArticleParser
 from dictquery import DictQuery
-
 
 LOG = logging.getLogger(__name__)
 
@@ -27,122 +26,24 @@ def to_structured_data(raw_pubs, xpaths):
     return pubs
 
 
-def parse_authors(authors):
-    res = list()
-    for a in authors:
-        if 'sup' not in a['p'] and 'italic' in a['p']:
-            items = a['p']['italic'].split(';')
-            for author_item in items:
-                a_info = dict()
-                a_info['raw'] = author_item.strip()
-                name_items    = author_item.strip().split(',')
-                a_info['name']        = name_items[0].strip()
-                a_info['affiliation'] = name_items[1].strip()
-                a_info['country']     = name_items[2].strip()
-                res.append(a_info)
-    return res
-
-
-def parse_keywords(keywords):
-    res = []
-    if keywords:
-        if 'kwd' in keywords:
-            res.extend(keywords['kwd'])
-        else:
-            for item in keywords:
-                if 'title' in item and 'kwd' in item:
-                    res.extend(item['kwd'])
-    return res
-
-
-def parse_abstracts(abstract):
-    res = ''
-    if abstract:
-        if '#text' in abstract:
-            res = abstract['#text']
-        elif type(abstract) == list:
-            for item in abstract:
-                if 'bold' in item:
-                    res += '{} {}'.format(item['bold'], item['#text'])
-                elif '#text' in item:
-                    res += item['#text']
-                else:
-                    res += item
-        else:
-            res = abstract
-    return res
-
-
-def parse_bodies(body):
-    res = list()
-    if body:
-        for item in body:
-            sec_d = dict()
-            if type(item) == collections.OrderedDict:
-                sec_d['title'] = item['title']
-                sec_d['text'] = ''
-                if 'p' in item:
-                    if type(item) == collections.OrderedDict:
-                        if type(item['p']) == collections.OrderedDict:
-                            for k, v in item['p'].items():
-                                if k == '#text':
-                                    sec_d['text'] += v
-                        elif type(item['p']) == list:
-                            for it in item['p']:
-                                if '#text' in it:
-                                    sec_d['text'] += it['#text']
-                        elif type(item['p']) == str:
-                            sec_d['text'] += item['p']
-                    elif type(item) == list:
-                        for it in item:
-                            if '#text' in item:
-                                sec_d['text'] += it['#text']
-                elif 'sec' in item:
-                    for sec_item in item['sec']:
-                        if type(sec_item) == collections.OrderedDict and sec_item.get('p'):
-                            if '#text' in sec_item['p']:
-                                sec_d['text'] += sec_item['p']['#text']
-                            elif type(sec_item['p']) == list:
-                                for it in sec_item['p']:
-                                    if '#text' in it:
-                                        sec_d['text'] += it['#text']
-                            elif type(sec_item['p']) == str:
-                                sec_d['text'] += sec_item['p']
-                        elif type(sec_item) == list:
-                            for item in sec_item:
-                                if '#text' in item:
-                                    sec_d['text'] += item['#text']
-            if sec_d:
-                res.append(sec_d)
-    return res
-
-
-def parse_dois(identif_dict):
-    res = ''
-    for idd in identif_dict:
-        if idd['@pub-id-type'] == 'doi':
-            res = idd['#text']
-    return res
-
-
 def parse_files(xml_path):
 
     xpaths = [
-        ('article_title',      'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/title-group/article-title'),
-        ('journal_title',      'OAI-PMH/ListRecords/record/metadata/article/front/journal-meta/journal-title-group/journal-title'),
-        ('doi',                'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/article-id'),
-        ('publisher_name',     'OAI-PMH/ListRecords/record/metadata/article/front/journal-meta/publisher/publisher-name'),
+        ('article_title', 'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/title-group/article-title'),
+        ('journal_title', 'OAI-PMH/ListRecords/record/metadata/article/front/journal-meta/journal-title-group/journal-title'),
+        ('doi', 'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/article-id'),
+        ('publisher_name', 'OAI-PMH/ListRecords/record/metadata/article/front/journal-meta/publisher/publisher-name'),
         ('publisher_location', 'OAI-PMH/ListRecords/record/metadata/article/front/journal-meta/publisher/publisher-loc'),
-        ('keywords',           'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/kwd-group'),
-        ('abstract',           'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/abstract/p'),
-        ('authors',            'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/author-notes/fn'),
-        ('acknowledgement',    'OAI-PMH/ListRecords/record/metadata/article/back/ack/p'),
-        ('identifier',         'OAI-PMH/ListRecords/record/header/identifier'),
-        ('body',               'OAI-PMH/ListRecords/record/metadata/article/body/sec')
+        ('keywords', 'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/kwd-group'),
+        ('abstract', 'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/abstract/p'),
+        ('authors', 'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/author-notes/fn'),
+        ('acknowledgement', 'OAI-PMH/ListRecords/record/metadata/article/back/ack/p'),
+        ('identifier', 'OAI-PMH/ListRecords/record/header/identifier'),
+        ('body', 'OAI-PMH/ListRecords/record/metadata/article/body/sec')
     ]
 
     raw_pubs = list()
-
+    parser = ArticleParser()
     for root, dirs, files in os.walk(xml_path):
         for file in files:
             if file.endswith(".gz"):
@@ -155,17 +56,17 @@ def parse_files(xml_path):
                 s_pubs = to_structured_data(raw_pubs, xpaths)
 
                 for idx, p in enumerate(s_pubs):
-                    s_pubs[idx]['authors']  = parse_authors([a for a in p['authors']] if p['authors'] else [])
-                    s_pubs[idx]['keywords'] = parse_keywords(p['keywords'])
-                    s_pubs[idx]['abstract'] = parse_abstracts(p['abstract'])
-                    s_pubs[idx]['body']     = parse_bodies(p['body'])
-                    s_pubs[idx]['doi']      = parse_dois(p['doi'])
+                    s_pubs[idx]['authors'] = parser.parse_authors([a for a in p['authors']] if p['authors'] else [])
+                    s_pubs[idx]['keywords'] = parser.parse_keywords(p['keywords'])
+                    s_pubs[idx]['abstract'] = parser.parse_abstracts(p['abstract'])
+                    s_pubs[idx]['body'] = parser.parse_bodies(p['body'])
+                    s_pubs[idx]['doi'] = parser.parse_dois(p['doi'])
                     yield s_pubs[idx]
 
 
 def store_output(pubs, output_path):
     for idx, pub in enumerate(pubs):
-        with open(os.path.join(output_path, str(idx)+'.json'), 'w') as f:
+        with open(os.path.join(output_path, str(idx) + '.json'), 'w') as f:
             f.write(json.dumps(pub, indent=True, sort_keys=True, ensure_ascii=False))
 
 
@@ -173,12 +74,12 @@ def run():
     logging.basicConfig(level=logging.INFO, format='%(asctime)-15s %(levelname)s:%(name)s %(funcName)s: %(message)s')
 
     argparser = argparse.ArgumentParser()
-    argparser.add_argument('--input_path',  help="The URL to XML input folder",   required=True)
+    argparser.add_argument('--input_path', help="The URL to XML input folder", required=True)
     argparser.add_argument('--output_path', help="The URL to JSON output folder", required=True)
     args = argparser.parse_args()
 
     # check paths exist
-    assert os.path.exists(args.input_path),  '{} does not exist!'.format(args.input_path)
+    assert os.path.exists(args.input_path), '{} does not exist!'.format(args.input_path)
     assert os.path.exists(args.output_path), '{} does not exist!'.format(args.output_path)
 
     # do the actual parsing
