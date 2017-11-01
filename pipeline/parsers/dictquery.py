@@ -5,18 +5,20 @@ class DictQuery(dict):
 
     def get(self, path, default=None):
         keys = path.split("/")
-        val = None
+        val = dict.get(self, keys[0], default)
 
-        for key in keys:
-            if val:
-                if isinstance(val, list):
-                    val = [v.get(key, default) if v else None for v in val]
-                else:
-                    val = val.get(key, default)
-            else:
-                val = dict.get(self, key, default)
-
+        for key in keys[1:]:
+            val = self._get_recursive(key, val, default)
             if not val:
                 break
 
         return val
+
+    def _get_recursive(self, key, val, default):
+        if not val:
+            return None
+        if isinstance(val, dict):
+            return val.get(key, default)
+        if isinstance(val, list):
+            return [self._get_recursive(key, v, default) if v else None for v in val]
+        return None
