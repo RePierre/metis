@@ -15,7 +15,7 @@ class Article(Document):
     doi = StringField(required=True, max_length=64)
     title = StringField(required=True, max_length=256)
     authors = ListField(ReferenceField(Author))
-    keywords = ListField(StringField(max_length=32))
+    keywords = ListField(StringField(max_length=128))
     abstract = StringField(required=True)
     text = StringField(required=True)
 
