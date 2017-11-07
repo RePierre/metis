@@ -1,3 +1,5 @@
+import logging
+from functools import reduce
 from mongoengine import Document
 from mongoengine import StringField
 from mongoengine import ListField
@@ -26,6 +28,7 @@ class DataStore:
         self._dbName = db
         self._port = port
         self._host = host
+        self._logger = logging.getLogger(__name__)
 
     def store_publications(self, publications):
         connect(db=self._dbName,
@@ -36,6 +39,7 @@ class DataStore:
             for author in self._convert_authors(pub):
                 author.save()
                 article.authors.append(author)
+            self._log_article_save(article)
             article.save()
 
     def _convert_authors(self, pub):
@@ -47,8 +51,18 @@ class DataStore:
     def _convert_to_article(self, pub):
         article = Article()
         article.doi = pub['doi']
-        article.title = pub['title']
-        article.keywords = pub['keywords']
+        article.title = pub['article_title']
+        article.keywords = pub['keywords'] if 'keywords' in pub else []
         article.abstract = pub['abstract']
-        article.text = pub['text']
+        article.text = self._convert_article_text(pub)
         return article
+
+    def _convert_article_text(self, pub):
+        sections = [[sec['title'], sec['text']] for sec in pub['body']]
+        flat = reduce(list.__add__, sections)
+        text = '\n'.join(flat)
+        return text
+
+    def _log_article_save(self, article):
+        message = "Saving article {}.".format(article.doi)
+        self._logger.info(message)
