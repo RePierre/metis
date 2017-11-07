@@ -1,5 +1,6 @@
 import os
 import gzip
+import logging
 import xmltodict as xd
 from dictquery import DictQuery
 from articleparser import ArticleParser
@@ -10,7 +11,7 @@ class FileParser():
 
     """
 
-    def __init__(self, logger):
+    def __init__(self):
         self._xpaths = [
             ('article_title', 'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/title-group/article-title'),
             ('journal_title', 'OAI-PMH/ListRecords/record/metadata/article/front/journal-meta/journal-title-group/journal-title'),
@@ -24,7 +25,7 @@ class FileParser():
             ('identifier', 'OAI-PMH/ListRecords/record/header/identifier'),
             ('body', 'OAI-PMH/ListRecords/record/metadata/article/body/sec')
         ]
-        self._logger = logger
+        self._logger = logging.getLogger(__name__)
 
     def parse_files(self, xml_path):
         raw_pubs = list()

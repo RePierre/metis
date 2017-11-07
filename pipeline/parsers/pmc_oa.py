@@ -9,7 +9,7 @@ LOG = logging.getLogger(__name__)
 
 
 def parse_files(xml_path):
-    parser = FileParser(LOG)
+    parser = FileParser()
     return parser.parse_files(xml_path)
 
 
