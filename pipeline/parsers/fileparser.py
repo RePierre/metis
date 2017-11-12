@@ -19,7 +19,9 @@ class FileParser():
             ('publisher_location', 'OAI-PMH/ListRecords/record/metadata/article/front/journal-meta/publisher/publisher-loc'),
             ('keywords', 'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/kwd-group'),
             ('abstract', 'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/abstract/p'),
-            ('authors', 'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/author-notes/fn'),
+            ('authors1', 'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/author-notes/fn'),
+            ('authors2', 'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/contrib-group'),
+            ('authors_affiliations', 'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/aff'),
             ('acknowledgement', 'OAI-PMH/ListRecords/record/metadata/article/back/ack/p'),
             ('identifier', 'OAI-PMH/ListRecords/record/header/identifier'),
             ('body', 'OAI-PMH/ListRecords/record/metadata/article/body/sec')
@@ -41,7 +43,12 @@ class FileParser():
                     s_pubs = self._to_structured_data(raw_pubs)
 
                     for idx, p in enumerate(s_pubs):
-                        s_pubs[idx]['authors'] = parser.parse_authors([a for a in p['authors']] if p['authors'] else [])
+                        s_pubs[idx]['authors'] = parser.parse_authors1([a for a in p['authors1']] if p['authors1'] else [])
+                        s_pubs[idx]['authors'].extend(parser.parse_authors2(p['authors2']))
+                        del s_pubs[idx]['authors1']  # remove temporary key
+                        del s_pubs[idx]['authors2']  # remove temporary key
+                        s_pubs[idx]['authors'] = parser.match_authors_affiliation(s_pubs[idx]['authors'], s_pubs[idx]['authors_affiliations'])
+                        del s_pubs[idx]['authors_affiliations']  # remove temporary key
                         s_pubs[idx]['keywords'] = parser.parse_keywords(p['keywords'])
                         s_pubs[idx]['abstract'] = parser.parse_abstracts(p['abstract'])
                         s_pubs[idx]['body'] = parser.parse_bodies(p['body'])

@@ -6,10 +6,10 @@ class ArticleParser():
 
     """
 
-    def parse_authors(self, authors):
+    def parse_authors1(self, authors):
         res = list()
         for a in authors:
-            if 'sup' not in a['p'] and 'italic' in a['p']:
+            if type(a)==dict and 'sup' not in a['p'] and 'italic' in a['p']:
                 items = a['p']['italic'].split(';')
                 for author_item in items:
                     a_info = dict()
@@ -19,6 +19,42 @@ class ArticleParser():
                     a_info['affiliation'] = name_items[1].strip()
                     a_info['country'] = name_items[2].strip()
                     res.append(a_info)
+        return res
+
+    def get_names(self, item):
+        if type(item) == collections.OrderedDict and item['@contrib-type'] == 'author':
+            if 'xref' in item:
+                affiliation_idx = [afidx['@rid'] for afidx in item['xref']] if type(item['xref']) == list else [item['xref']['@rid']]
+            else:
+                affiliation_idx = []
+            return {'name': '{} {}'.format(item['name']['given-names'], item['name']['surname']), 'affiliation_idx': affiliation_idx}
+        else:
+            return None
+
+    def parse_authors2(self, authors):
+        res = list()
+        _authors = list()
+        if type(authors) == list:
+            for a in authors:
+                for it in a.get('contrib'):
+                    _authors.append(it)
+        else:
+            _authors = authors.get('contrib')
+        for a in _authors:
+            res.append(self.get_names(a))
+        return res
+
+    def match_authors_affiliation(self, authors, affiliations):
+        res = authors.copy()
+        if affiliations:
+            _aff = {it['@id']: it['#text'] for it in affiliations} if type(affiliations) == list else {affiliations['@id']: affiliations['#text']}
+            for a in authors:
+                a['affiliations'] = []
+                for af_idx in a['affiliation_idx']:
+                    if af_idx in _aff:
+                        a['affiliations'].append(_aff[af_idx])
+                del a['affiliation_idx']  # remove temporary key
+                res.append(a)
         return res
 
     def parse_keywords(self, keywords):
