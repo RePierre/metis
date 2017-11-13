@@ -8,7 +8,12 @@ install_requires = [
     "python-dateutil",
     "feedparser",
     "dict2xml",
-    "xmltodict"
+    "xmltodict",
+    "mongoengine"
+]
+
+dev_requires = [
+    "autopep8",
 ]
 
 tests_requires = [
@@ -32,5 +37,8 @@ setup(
     zip_safe=True,
     install_requires=install_requires,
     tests_require=tests_requires,
+    extras_require={
+        'dev': dev_requires
+    },
     test_suite="py.test",
 )
