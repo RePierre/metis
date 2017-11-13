@@ -8,9 +8,8 @@ from mongoengine import connect
 
 
 class Author(Document):
-    name = StringField(required=True, max_length=64)
-    affiliation = StringField(max_length=64)
-    country = StringField(max_length=128)
+    name = StringField(required=True)
+    affiliations = ListField(StringField())
 
 
 class Article(Document):
@@ -44,8 +43,7 @@ class DataStore:
 
     def _convert_authors(self, pub):
         return [Author(name=a['name'],
-                       affiliation=a['affiliation'],
-                       country=a['country'])
+                       affiliations=a['affiliations'])
                 for _, a in enumerate(pub['authors'])]
 
     def _convert_to_article(self, pub):
