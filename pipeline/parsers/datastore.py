@@ -49,17 +49,25 @@ class DataStore:
     def _convert_to_article(self, pub):
         article = Article()
         article.doi = pub['doi']
-        article.title = pub['article_title']
+        article.title = self._get_text(pub['article_title'])
         article.keywords = pub['keywords'] if 'keywords' in pub else []
         article.abstract = pub['abstract']
         article.text = self._convert_article_text(pub)
         return article
 
     def _convert_article_text(self, pub):
-        sections = [[sec['title'], sec['text']] for sec in pub['body']]
+        sections = [[self._get_text(sec['title']), self._get_text(sec['text'])] for sec in pub['body']]
         flat = reduce(list.__add__, sections)
         text = '\n'.join(flat)
         return text
+
+    def _get_text(self, item):
+        if isinstance(item, str):
+            return item
+        if isinstance(item, dict):
+            if '#text' in item:
+                return item['#text']
+        return ''
 
     def _log_article_save(self, article):
         message = "Saving article {}.".format(article.doi)
