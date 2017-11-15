@@ -42,9 +42,12 @@ class DataStore:
             article.save()
 
     def _convert_authors(self, pub):
+        if not pub['authors']:
+            return []
         return [Author(name=a['name'],
-                       affiliations=a['affiliations'])
-                for _, a in enumerate(pub['authors'])]
+                       affiliations=a['affiliations'] if 'affiliations' in a else [])
+                for _, a in enumerate(pub['authors'])
+                if a is not None]
 
     def _convert_to_article(self, pub):
         article = Article()

@@ -49,6 +49,8 @@ class ArticleParser():
         if affiliations:
             _aff = {it['@id']: it['#text'] for it in affiliations} if type(affiliations) == list else {affiliations['@id']: affiliations['#text']}
             for a in authors:
+                if not a:
+                    continue
                 a['affiliations'] = []
                 for af_idx in a['affiliation_idx']:
                     if af_idx in _aff:
