@@ -89,6 +89,8 @@ class ArticleParser():
                 res = abstract['#text']
             elif type(abstract) == list:
                 for item in abstract:
+                    if not item:
+                        continue
                     if 'bold' in item and '#text' in item:
                         res += '{} {}'.format(item['bold'], item['#text'])
                     elif '#text' in item:
