@@ -22,14 +22,15 @@ class ArticleParser():
         return res
 
     def get_names(self, item):
-        if type(item) == collections.OrderedDict and item['@contrib-type'] == 'author':
-            if 'xref' in item:
-                affiliation_idx = [afidx['@rid'] for afidx in item['xref']] if type(item['xref']) == list else [item['xref']['@rid']]
-            else:
-                affiliation_idx = []
-            return {'name': '{} {}'.format(item['name']['given-names'], item['name']['surname']), 'affiliation_idx': affiliation_idx}
-        else:
+        if type(item) != collections.OrderedDict or item['@contrib-type'] != 'author':
             return None
+        if 'xref' in item:
+            affiliation_idx = [afidx['@rid'] for afidx in item['xref']] if type(item['xref']) == list else [item['xref']['@rid']]
+        else:
+            affiliation_idx = []
+        if 'name' not in item:
+            return None
+        return {'name': '{} {}'.format(item['name']['given-names'], item['name']['surname']), 'affiliation_idx': affiliation_idx}
 
     def parse_authors2(self, authors):
         res = list()
