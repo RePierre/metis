@@ -64,7 +64,8 @@ class DataStore:
         return result
 
     def _convert_article_text(self, pub):
-        sections = [[self._get_text(sec['title']), self._get_text(sec['text'])] for sec in pub['body']]
+        sections = [[self._get_text(sec['title']), self._get_text(sec['text'])]
+                    for sec in pub['body']]
         flat = reduce(list.__add__, sections)
         text = '\n'.join(flat)
         return text
