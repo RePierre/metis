@@ -35,6 +35,9 @@ class DataStore:
                 port=self._port)
         for _, pub in enumerate(publications):
             article = self._convert_to_article(pub)
+            if not article.text:
+                self._logger.error('Article {} has no text.'.format(article.doi))
+                continue
             for author in self._convert_authors(pub):
                 author.save()
                 article.authors.append(author)
@@ -66,6 +69,9 @@ class DataStore:
     def _convert_article_text(self, pub):
         sections = [[self._get_text(sec['title']), self._get_text(sec['text'])]
                     for sec in pub['body']]
+        if not sections:
+            return ''
+
         flat = reduce(list.__add__, sections)
         text = '\n'.join(flat)
         return text
