@@ -33,6 +33,9 @@ class ArticleParser():
 
     def parse_authors2(self, authors):
         res = list()
+        if not authors:
+            return res
+
         _authors = list()
         if type(authors) == list:
             for a in authors:
@@ -64,7 +67,8 @@ class ArticleParser():
             return {it['@id']: it['#text'] if '#text' in it else ''
                     for it in affiliations}
         if isinstance(affiliations, dict) and '@id' in affiliations:
-            return {affiliations['@id']: affiliations['#text']}
+            return {affiliations['@id']:
+                    affiliations['#text'] if '#text' in affiliations else ''}
         return {}
 
     def parse_keywords(self, keywords):
