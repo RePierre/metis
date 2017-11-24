@@ -23,11 +23,13 @@ class Article(Document):
 
 class DataStore:
     def __init__(self, db='pmc_oa',
-                 host='localhost', port=27017):
+                 host='localhost', port=27017,
+                 loglevel=logging.ERROR):
         self._dbName = db
         self._port = port
         self._host = host
         self._logger = logging.getLogger(__name__)
+        self._logger.setLevel(loglevel)
 
     def store_publications(self, publications):
         connect(db=self._dbName,
