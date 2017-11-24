@@ -47,7 +47,7 @@ class ArticleParser():
     def match_authors_affiliation(self, authors, affiliations):
         res = authors.copy()
         if affiliations:
-            _aff = {it['@id']: it['#text'] for it in affiliations} if type(affiliations) == list else {affiliations['@id']: affiliations['#text']}
+            _aff = self.build_affiliations(affiliations)
             for a in authors:
                 if not a:
                     continue
@@ -58,6 +58,13 @@ class ArticleParser():
                 del a['affiliation_idx']  # remove temporary key
                 res.append(a)
         return res
+
+    def build_affiliations(self, affiliations):
+        if type(affiliations) == list:
+            return {it['@id']: it['#text'] for it in affiliations}
+        if isinstance(affiliations, dict) and '@id' in affiliations:
+            return {affiliations['@id']: affiliations['#text']}
+        return {}
 
     def parse_keywords(self, keywords):
         res = []
