@@ -90,7 +90,7 @@ class ArticleParser():
                     elif '#text' in item:
                         res += item['#text']
                     else:
-                        res += item
+                        res += item if isinstance(item, str) else ''
             else:
                 res = abstract
         return res
