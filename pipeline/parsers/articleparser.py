@@ -61,7 +61,8 @@ class ArticleParser():
 
     def build_affiliations(self, affiliations):
         if type(affiliations) == list:
-            return {it['@id']: it['#text'] for it in affiliations}
+            return {it['@id']: it['#text'] if '#text' in it else ''
+                    for it in affiliations}
         if isinstance(affiliations, dict) and '@id' in affiliations:
             return {affiliations['@id']: affiliations['#text']}
         return {}
