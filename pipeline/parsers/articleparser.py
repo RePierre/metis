@@ -9,7 +9,7 @@ class ArticleParser():
     def parse_authors1(self, authors):
         res = list()
         for a in authors:
-            if type(a)==dict and 'sup' not in a['p'] and 'italic' in a['p']:
+            if type(a) == dict and 'sup' not in a['p'] and 'italic' in a['p']:
                 items = a['p']['italic'].split(';')
                 for author_item in items:
                     a_info = dict()
@@ -93,7 +93,7 @@ class ArticleParser():
             for item in body:
                 sec_d = dict()
                 if type(item) == collections.OrderedDict:
-                    sec_d['title'] = item['title']
+                    sec_d['title'] = item['title'] if 'title' in item else ''
                     sec_d['text'] = ''
                     if 'p' in item:
                         if type(item) == collections.OrderedDict:
