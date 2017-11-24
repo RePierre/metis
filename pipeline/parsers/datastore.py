@@ -53,10 +53,15 @@ class DataStore:
         article = Article()
         article.doi = pub['doi']
         article.title = self._get_text(pub['article_title'])
-        article.keywords = pub['keywords'] if 'keywords' in pub else []
+        article.keywords = self._convert_article_keywords(pub)
         article.abstract = pub['abstract']
         article.text = self._convert_article_text(pub)
         return article
+
+    def _convert_article_keywords(self, pub):
+        kwdlist = pub['keywords'] if 'keywords' in pub else []
+        result = [self._get_text(kwd) for kwd in kwdlist]
+        return result
 
     def _convert_article_text(self, pub):
         sections = [[self._get_text(sec['title']), self._get_text(sec['text'])] for sec in pub['body']]
