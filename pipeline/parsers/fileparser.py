@@ -11,7 +11,7 @@ class FileParser():
 
     """
 
-    def __init__(self):
+    def __init__(self, debug_mode):
         self._xpaths = [
             ('article_title', 'OAI-PMH/ListRecords/record/metadata/article/front/article-meta/title-group/article-title'),
             ('journal_title', 'OAI-PMH/ListRecords/record/metadata/article/front/journal-meta/journal-title-group/journal-title'),
@@ -28,6 +28,7 @@ class FileParser():
             ('body', 'OAI-PMH/ListRecords/record/metadata/article/body/sec')
         ]
         self._logger = logging.getLogger(__name__)
+        self._debug_mode = debug_mode
 
     def parse_files(self, xml_path):
         raw_pubs = list()
@@ -55,6 +56,7 @@ class FileParser():
                         s_pubs[idx]['body'] = parser.parse_bodies(p['body'])
                         s_pubs[idx]['doi'] = parser.parse_dois(p['doi'])
                         yield s_pubs[idx]
+                    os.remove(file_path)
 
     def _to_structured_data(self, raw_pubs):
         pubs = list()

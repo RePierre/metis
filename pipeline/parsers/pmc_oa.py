@@ -8,8 +8,8 @@ from datastore import DataStore
 LOG = logging.getLogger(__name__)
 
 
-def parse_files(xml_path):
-    parser = FileParser()
+def parse_files(xml_path, debug_mode):
+    parser = FileParser(debug_mode)
     return parser.parse_files(xml_path)
 
 
@@ -31,6 +31,7 @@ def run():
     argparser.add_argument('--input_path', help="The URL to XML input folder", required=True)
     argparser.add_argument('--output_path', help="The URL to JSON output folder", required=False)
     argparser.add_argument('--mongodb_host', help="The host URI to Mongo DB", required=False)
+    argparser.add_argument('--debug', help="Run in debug mode; will delete files that are processed", required=False)
     args = argparser.parse_args()
 
     # check paths exist
@@ -40,7 +41,7 @@ def run():
         assert os.path.exists(args.output_path), '{} does not exist!'.format(args.output_path)
 
     # do the actual parsing
-    pubs = parse_files(args.input_path)
+    pubs = parse_files(args.input_path, args.debug)
     if args.output_path:
         store_output_to_disk(pubs, args.output_path)
     else:
