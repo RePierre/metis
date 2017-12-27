@@ -30,7 +30,10 @@ class ArticleParser():
             affiliation_idx = []
         if 'name' not in item:
             return None
-        return {'name': '{} {}'.format(item['name']['given-names'], item['name']['surname']), 'affiliation_idx': affiliation_idx}
+        given_names = item['name']['given-names'] if 'given-names' in item['name'] else ''
+        surname = item['name']['surname'] if 'surname' in item['name'] else ''
+        return {'name': '{} {}'.format(given_names, surname),
+                'affiliation_idx': affiliation_idx}
 
     def parse_authors2(self, authors):
         res = list()
