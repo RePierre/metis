@@ -25,6 +25,12 @@ class Article(Document):
     creationtimestamp = DateTimeField(required=True, default=datetime.datetime.now)
 
 
+class ParseError(Document):
+    doi = StringField(required=True, max_length=64)
+    filename = StringField(required=True)
+    creationtimestamp = DateTimeField(required=True, default=datetime.datetime.now)
+
+
 class DataStore:
     def __init__(self, db='pmc_oa',
                  host='localhost', port=27017,
@@ -43,6 +49,8 @@ class DataStore:
             article = self._convert_to_article(pub)
             if not article.text:
                 self._logger.error('Article {} has no text.'.format(article.doi))
+                parse_error = self._convert_to_parse_error(pub)
+                parse_error.save()
                 continue
             for author in self._convert_authors(pub):
                 author.save()

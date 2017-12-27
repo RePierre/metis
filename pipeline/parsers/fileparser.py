@@ -55,6 +55,7 @@ class FileParser():
                         s_pubs[idx]['abstract'] = parser.parse_abstracts(p['abstract'])
                         s_pubs[idx]['body'] = parser.parse_bodies(p['body'])
                         s_pubs[idx]['doi'] = parser.parse_dois(p['doi'])
+                        s_pubs[idx]['file_path'] = str(file_path).strip(xml_path)
                         yield s_pubs[idx]
                     os.remove(file_path)
 
