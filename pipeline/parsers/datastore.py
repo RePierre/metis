@@ -105,7 +105,7 @@ class DataStore:
     def _convert_to_parse_error(self, pub):
         parse_error = ParseError()
         parse_error.doi = self._get_article_doi(pub)
-        parse_error.message = 'Article {} has no text.'.format(article.doi)
+        parse_error.message = 'Article {} has no text.'.format(self._get_article_doi(pub))
         parse_error.filename = pub['file_path']
         return parse_error
 
