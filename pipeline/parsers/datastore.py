@@ -27,7 +27,6 @@ class Article(Document):
 
 class ParseError(Document):
     doi = StringField(required=True, max_length=64)
-    filename = StringField(required=True)
     message = StringField(required=True)
     creationtimestamp = DateTimeField(required=True, default=datetime.datetime.now)
 
@@ -106,7 +105,6 @@ class DataStore:
         parse_error = ParseError()
         parse_error.doi = self._get_article_doi(pub)
         parse_error.message = 'Article {} has no text.'.format(self._get_article_doi(pub))
-        parse_error.filename = pub['file_path']
         return parse_error
 
     def _get_article_doi(self, pub):
