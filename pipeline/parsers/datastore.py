@@ -1,15 +1,18 @@
 import logging
+import datetime
 from functools import reduce
 from mongoengine import Document
 from mongoengine import StringField
 from mongoengine import ListField
 from mongoengine import ReferenceField
+from mongoengine import DateTimeField
 from mongoengine import connect
 
 
 class Author(Document):
     name = StringField(required=True)
     affiliations = ListField(StringField())
+    creationtimestamp = DateTimeField(required=True, default=datetime.datetime.now)
 
 
 class Article(Document):
@@ -19,6 +22,7 @@ class Article(Document):
     keywords = ListField(StringField(max_length=128))
     abstract = StringField(required=True)
     text = StringField(required=True)
+    creationtimestamp = DateTimeField(required=True, default=datetime.datetime.now)
 
 
 class DataStore:
