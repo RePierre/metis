@@ -60,10 +60,10 @@ class DataStore:
 
     def _convert_to_article(self, pub):
         article = Article()
-        article.doi = pub['doi']
+        article.doi = self._get_article_doi(pub)
         article.title = self._get_text(pub['article_title'])
         article.keywords = self._convert_article_keywords(pub)
-        article.abstract = pub['abstract']
+        article.abstract = self._get_text(pub['abstract'])
         article.text = self._convert_article_text(pub)
         return article
 
@@ -93,3 +93,12 @@ class DataStore:
     def _log_article_save(self, article):
         message = "Saving article {}.".format(article.doi)
         self._logger.info(message)
+
+    def _convert_to_parse_error(self, pub):
+        parse_error = ParseError()
+        parse_error.doi = self._get_article_doi(pub)
+        parse_error.filename = pub['file_path']
+        return parse_error
+
+    def _get_article_doi(self, pub):
+        return pub['doi']
