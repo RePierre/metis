@@ -9,7 +9,9 @@ install_requires = [
     "feedparser",
     "dict2xml",
     "xmltodict",
-    "mongoengine"
+    "mongoengine",
+    "keras",
+    "numpy"
 ]
 
 dev_requires = [
