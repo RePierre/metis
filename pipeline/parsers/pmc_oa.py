@@ -3,7 +3,7 @@ import json
 import argparse
 import logging
 from fileparser import FileParser
-from datastore import DataStore
+from common.datastore import DataStore
 
 LOG = logging.getLogger(__name__)
 
