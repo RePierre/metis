@@ -69,6 +69,16 @@ class DataStore:
             self._log_article_save(article)
             article.save()
 
+    def load_articles(self, limit=None):
+        connect(db=self._dbName,
+                host=self._host,
+                port=self._port)
+        articles = Article.objects
+        if limit:
+            articles = articles[:limit]
+        for a in articles:
+            yield a
+
     def _convert_authors(self, pub):
         if not pub['authors']:
             return []

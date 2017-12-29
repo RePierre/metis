@@ -11,11 +11,15 @@ install_requires = [
     "xmltodict",
     "mongoengine",
     "keras",
-    "numpy"
+    "numpy",
+    "pandas"
 ]
 
 dev_requires = [
     "autopep8",
+    "rope_py3k",
+    "importmagic",
+    "yapf"
 ]
 
 tests_requires = [
