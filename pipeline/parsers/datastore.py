@@ -48,7 +48,7 @@ class DataStore:
         for _, pub in enumerate(publications):
             article, parse_error = self._convert_to_article(pub)
             if not article and not parse_error:
-                # nothing to save
+                # Nothing to save
                 continue
             if parse_error:
                 parse_error.save()
@@ -59,6 +59,9 @@ class DataStore:
                 parse_error.doi = article.doi
                 parse_error.message = "Could not parse authors."
                 parse_error.save()
+                continue
+            # If an article with same doi exists do not insert
+            if Article.objects(doi=article.doi):
                 continue
             for author in self._convert_authors(pub):
                 author.save()
