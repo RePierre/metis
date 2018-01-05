@@ -6,6 +6,7 @@ import os
 import json
 from common.datastore import DataStore
 from pandas import DataFrame
+from nltk.corpus import wordnet as wn
 
 
 def parse_arguments():
@@ -37,7 +38,8 @@ def load_publications(directory, ext='json'):
                 data = json.loads(f.read())
 
                 for item in data:
-                    result = {'abstract': item['abstract'], 'text': item['text']}
+                    result = {'abstract': item['abstract'],
+                              'text': item['text']}
                     yield result
 
 
@@ -79,6 +81,7 @@ def run(args):
         a[a < args.delta] = 0
         b[b < args.delta] = 0
 
+        enhance_with_synonyms(a, b, t.word_index)
         prod = np.multiply(a, b)
         score = np.count_nonzero(prod)
         data['{i:d}-{j:d}'.format(i=i, j=j)] = {'score': score,
@@ -88,6 +91,47 @@ def run(args):
     df = DataFrame.from_dict(data, orient='index')
     df.sort_values(by=['score'], ascending=False, inplace=True)
     print(df)
+
+
+def enhance_with_synonyms(a, b, word_index):
+    enhancer = SynonymsEnhancer(word_index)
+    enhancer.enhance(a, b)
+
+
+class SynonymsEnhancer:
+    def __init__(self, word_index):
+        self.word_index = {word: index for word, index in word_index.items()}
+        self.reverse_index = {index: word for word, index in word_index.items()}
+
+    def enhance(self, a, b):
+        assert(len(a) == len(b))
+        for index in range(len(a)):
+            if a[index] == 0 and b[index] == 0:
+                continue
+            if a[index] != 0 and b[index] != 0:
+                continue
+            word = self.reverse_index[index]
+            synonyms = self.get_synonyms(word)
+            indices = [self.word_index[s] for s in synonyms if s in self.word_index]
+            if not indices:
+                continue
+            if a[index] == 0:
+                a[index] = self.compute_score(b, synonyms, indices)
+            if b[index] == 0:
+                b[index] = self.compute_score(a, synonyms, indices)
+
+    def compute_score(self, document, synset, synset_indices):
+        score = np.divide(
+            np.sum([document[j] for j in synset_indices]),
+            len(synset))
+        return score
+
+    def get_synonyms(self, word):
+        ss = wn.synsets(word)
+        chain = it.chain.from_iterable([w.lemma_names() for w in ss])
+        s = set(chain)
+        s.discard(word)
+        return s
 
 
 if __name__ == "__main__":

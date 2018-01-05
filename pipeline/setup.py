@@ -12,7 +12,8 @@ install_requires = [
     "mongoengine",
     "keras",
     "numpy",
-    "pandas"
+    "pandas",
+    "nltk"
 ]
 
 dev_requires = [
