@@ -23,7 +23,9 @@ install_requires = [
     "keras",
     "numpy",
     "pandas",
-    "nltk"
+    "nltk",
+    "spacy",
+    "textacy"
 ]
 
 dev_requires = [
