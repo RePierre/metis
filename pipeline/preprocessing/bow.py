@@ -16,14 +16,17 @@ def parse_arguments():
                         required=False,
                         type=float,
                         default=0.3)
-    parser.add_argument('--input_uri',
+    parser.add_argument('--input-uri',
                         help="The uri to the input data.",
                         required=True)
-    parser.add_argument('--num_articles',
+    parser.add_argument('--num-articles',
                         help="Max number of articles to retrieve. Default is 100.",
                         type=int,
                         required=False,
                         default=100)
+    parser.add_argument('--output-file',
+                        help='The file in which to print the results.',
+                        required=True)
     return parser.parse_args()
 
 
@@ -89,8 +92,9 @@ def run(args):
                                                 'j_doi': docs[j]['doi']}
 
     df = DataFrame.from_dict(data, orient='index')
+    df.index.name = 'i-j'
     df.sort_values(by=['score'], ascending=False, inplace=True)
-    print(df)
+    df.to_csv(args.output_file)
 
 
 def enhance_with_synonyms(a, b, word_index):
