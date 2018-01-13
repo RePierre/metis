@@ -72,6 +72,7 @@ def run(args):
             scores[index_key][metric.__name__] = metric(embeddings_a, embeddings_b)
 
     df = DataFrame.from_dict(scores, orient='index')
+    df.index.name = 'i-j'
     df.to_csv(args.output_file)
 
 
