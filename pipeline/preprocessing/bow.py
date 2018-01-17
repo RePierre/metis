@@ -7,6 +7,7 @@ import json
 from common.datastore import DataStore
 from pandas import DataFrame
 from nltk.corpus import wordnet as wn
+from scipy.special import expit
 
 
 def parse_arguments():
@@ -94,6 +95,10 @@ def run(args):
     df = DataFrame.from_dict(data, orient='index')
     df.index.name = 'i-j'
     df.sort_values(by=['score'], ascending=False, inplace=True)
+
+    # Since expit(x) is very close to 1.0 when x >= 6
+    # subtract 6 from np.log(score) to have a better view of the score.
+    df['score'] = expit(np.log(df.score) - 6)
     df.to_csv(args.output_file)
 
 
