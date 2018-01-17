@@ -1,4 +1,5 @@
 import spacy
+import textacy
 from textacy import similarity as sim
 import itertools as it
 from argparse import ArgumentParser
@@ -33,7 +34,7 @@ def load_publications(mongodb_host, num_articles, article_part):
     for article in ds.load_articles(num_articles):
         text = article.abstract if article_part == 'abstract' else article.text
         publications.append({'doi': article.doi,
-                             'text': text})
+                             'text': textacy.preprocess_text(text, lowercase=True, no_punct=True)})
     return publications
 
 
@@ -57,8 +58,10 @@ def run(args):
                                      args.article_part)
     scores = {}
     nlp = spacy.load('en')
+
     for i, j in it.combinations(range(len(publications)), 2):
         index_key = '{:d}-{:d}'.format(i, j)
+        print("Computing similarity for pair {}.".format(index_key))
         a = publications[i]
         b = publications[j]
         scores[index_key] = {'i_doi': a['doi'],
@@ -66,9 +69,9 @@ def run(args):
         for metric in text_similarity_metrics:
             scores[index_key][metric.__name__] = metric(a['text'], b['text'])
 
+        embeddings_a = nlp(a['text'])
+        embeddings_b = nlp(b['text'])
         for metric in vector_similarity_metrics:
-            embeddings_a = nlp(a['text'])
-            embeddings_b = nlp(b['text'])
             scores[index_key][metric.__name__] = metric(embeddings_a, embeddings_b)
 
     df = DataFrame.from_dict(scores, orient='index')
