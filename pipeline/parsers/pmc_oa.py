@@ -16,7 +16,7 @@ def parse_files(xml_path, debug_mode):
 def store_output_to_disk(pubs, output_path):
     for idx, pub in enumerate(pubs):
         with open(os.path.join(output_path, str(idx) + '.json'), 'w') as f:
-            f.write(json.dumps(pub, indent=True, sort_keys=True, ensure_ascii=False))
+            f.write(json.dumps(pub, indent=True, sort_keys=True, ensure_ascii=True))
 
 
 def store_output_to_mongo(pubs, host):
