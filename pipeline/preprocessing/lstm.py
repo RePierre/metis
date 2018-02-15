@@ -45,8 +45,8 @@ def build_datasets(text):
 def run(args):
     model = Sequential()
     model.add(LSTM(INPUT_SIZE,
-                   input_shape=(INPUT_SIZE, INPUT_SIZE),
-                   stateful=False))
+                   batch_input_shape=(args.batch_size, INPUT_SIZE, INPUT_SIZE),
+                   stateful=args.stateful))
     model.add(Dense(INPUT_SIZE, activation='linear'))
 
     optimizer = RMSprop(lr=args.learning_rate)
@@ -74,6 +74,10 @@ def parse_arguments():
                         required=False,
                         default=15,
                         type=int)
+    parser.add_argument('--stateful',
+                        help='When set will run LSTM cell in stateful mode.',
+                        required=False,
+                        action='store_true')
     parser.add_argument('--learning-rate',
                         help='The learning rate.',
                         required=False,
