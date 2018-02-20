@@ -25,7 +25,8 @@ install_requires = [
     "pandas",
     "nltk",
     "spacy",
-    "textacy"
+    "textacy",
+    "tensorboard"
 ]
 
 dev_requires = [

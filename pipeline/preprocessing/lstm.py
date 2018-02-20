@@ -3,6 +3,7 @@ from keras.layers import Dense
 from keras.layers import LSTM
 from keras.optimizers import RMSprop
 from keras.preprocessing.sequence import pad_sequences
+from keras.callbacks import TensorBoard
 
 import numpy as np
 import spacy
@@ -53,8 +54,14 @@ def run(args):
     model.compile(loss=args.loss,
                   optimizer=optimizer,
                   metrics=['accuracy'])
+    tensorboardDisplay = TensorBoard(log_dir=args.tensorboard_log_dir,
+                                     histogram_freq=0,
+                                     write_graph=True,
+                                     write_images=True,
+                                     batch_size=args.batch_size)
     X, Y = build_datasets(read_text(args.input_file))
-    model.fit(X, Y, epochs=args.epochs, batch_size=args.batch_size)
+    model.fit(X, Y, epochs=args.epochs, batch_size=args.batch_size,
+              callbacks=[tensorboardDisplay])
     scores = model.evaluate(X, Y)
     print('Model accuracy: {:f}'.format(scores[1] * 100))
 
@@ -87,6 +94,10 @@ def parse_arguments():
                         help='Loss function.',
                         required=False,
                         default='cosine_proximity')
+    parser.add_argument('--tensorboard-log-dir',
+                        help='The path of the directory where to save the log files to be parsed by TensorBoard',
+                        required=False,
+                        default='./logs')
     return parser.parse_args()
 
 
