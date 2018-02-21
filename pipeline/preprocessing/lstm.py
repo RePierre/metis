@@ -62,7 +62,7 @@ def run(args):
     X, Y = build_datasets(read_text(args.input_file))
     model.fit(X, Y, epochs=args.epochs, batch_size=args.batch_size,
               callbacks=[tensorboardDisplay])
-    scores = model.evaluate(X, Y)
+    scores = model.evaluate(X, Y, batch_size=args.batch_size)
     print('Model accuracy: {:f}'.format(scores[1] * 100))
 
 
