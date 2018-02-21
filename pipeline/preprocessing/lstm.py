@@ -93,7 +93,7 @@ def parse_arguments():
     parser.add_argument('--loss',
                         help='Loss function.',
                         required=False,
-                        default='cosine_proximity')
+                        default='mean_squared_error')
     parser.add_argument('--tensorboard-log-dir',
                         help='The path of the directory where to save the log files to be parsed by TensorBoard',
                         required=False,
