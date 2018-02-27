@@ -108,3 +108,6 @@ ENV/
 
 # Various shell files
 *.sh
+
+# Tensorboard logs
+logs/
