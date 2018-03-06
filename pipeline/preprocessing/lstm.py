@@ -20,15 +20,16 @@ def read_text(file_path):
     with open(file_path, 'rt', encoding='utf-8') as f:
         reader = csv.reader(f, delimiter='\t')
         for line in reader:
-            yield (line[4], line[5], np.float32(line[3]))
+            if len(line) >= 7:
+                yield (line[5], line[6], np.float32(line[4]))
 
 
 def build_datasets(input):
     T1 = []
-    T1 = []
+    T2 = []
     Y = []
-    for sentence1, sentece2, score in enumerate(input):
-        T1.append([t.vector for t in nlp(sentece1)])
+    for sentence1, sentence2, score in input:
+        T1.append([t.vector for t in nlp(sentence1)])
         T2.append([t.vector for t in nlp(sentence2)])
         Y.append(score)
 
