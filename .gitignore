@@ -111,3 +111,6 @@ ENV/
 
 # Tensorboard logs
 logs/
+
+# Data dir
+.data/
