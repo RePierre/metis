@@ -1,9 +1,10 @@
-from keras.models import Sequential
+from keras.models import Model
 from keras.layers import Dense
 from keras.layers import LSTM
 from keras.layers import Input
 from keras.optimizers import RMSprop
 from keras.preprocessing.sequence import pad_sequences
+from keras.layers import concatenate
 from keras.callbacks import TensorBoard
 
 import numpy as np
@@ -58,7 +59,7 @@ def run(args):
     encoded2 = shared_lstm(text2)
 
     # Concatenate outputs
-    concatenated = keras.layers.concatenate([encoded1, encoded2])
+    concatenated = concatenate([encoded1, encoded2])
 
     # Create the output layer
     # It should return a single number
