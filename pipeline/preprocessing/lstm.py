@@ -6,6 +6,7 @@ from keras.optimizers import RMSprop
 from keras.preprocessing.sequence import pad_sequences
 from keras.layers import concatenate
 from keras.callbacks import TensorBoard
+from scipy.special import expit
 
 import numpy as np
 import spacy
@@ -41,6 +42,8 @@ def build_datasets(input):
     T2 = np.reshape(T2, (T2.shape[0], INPUT_SIZE, INPUT_SIZE))
     X = [T1, T2]
     Y = np.asarray(Y)
+    # fit the scores between 0 and 1
+    Y = expit(Y)
     return X, Y
 
 
