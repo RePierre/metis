@@ -22,6 +22,7 @@ install_requires = [
     "mongoengine",
     "keras",
     "numpy",
+    "tensorflow",
     "pandas",
     "nltk",
     "spacy",
