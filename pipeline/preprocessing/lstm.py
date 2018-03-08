@@ -127,7 +127,7 @@ def parse_arguments():
     parser.add_argument('--loss',
                         help='Loss function.',
                         required=False,
-                        default='mean_squared_error')
+                        default='logcosh')
     parser.add_argument('--tensorboard-log-dir',
                         help='The path of the directory where to save the log files to be parsed by TensorBoard',
                         required=False,
