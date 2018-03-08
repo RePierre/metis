@@ -26,7 +26,14 @@ def read_text(file_path):
                 yield (line[5], line[6], np.float32(line[4]))
 
 
-def build_datasets(input):
+def pad_and_reshape(sequence, time_steps):
+    sequence = pad_sequences(sequence, maxlen=time_steps, dtype='float32')
+    num_samples, num_features = sequence.shape[0], INPUT_SIZE
+    sequence = np.reshape(sequence, (num_samples, time_steps, num_features))
+    return sequence
+
+
+def build_datasets(input, time_steps):
     T1 = []
     T2 = []
     Y = []
@@ -35,11 +42,9 @@ def build_datasets(input):
         T2.append([t.vector for t in nlp(sentence2)])
         Y.append(score)
 
-    T1 = pad_sequences(T1, maxlen=INPUT_SIZE, dtype='float32')
-    T1 = np.reshape(T1, (T1.shape[0], INPUT_SIZE, INPUT_SIZE))
+    T1 = pad_and_reshape(T1, time_steps)
+    T2 = pad_and_reshape(T2, time_steps)
 
-    T2 = pad_sequences(T2, maxlen=INPUT_SIZE, dtype='float32')
-    T2 = np.reshape(T2, (T2.shape[0], INPUT_SIZE, INPUT_SIZE))
     X = [T1, T2]
     Y = np.asarray(Y)
     # fit the scores between 0 and 1
@@ -47,15 +52,17 @@ def build_datasets(input):
     return X, Y
 
 
+def build_input_node(name, batch_size, time_steps, num_features=INPUT_SIZE):
+    return Input(batch_shape=(batch_size, time_steps, num_features), name=name)
+
+
 def run(args):
     # Define the input nodes
-    text1 = Input(shape=(INPUT_SIZE, INPUT_SIZE), name='text1')
-    text2 = Input(shape=(INPUT_SIZE, INPUT_SIZE), name='text2')
+    text1 = build_input_node('text1', args.batch_size, args.time_steps)
+    text2 = build_input_node('text2', args.batch_size, args.time_steps)
 
     # Create the shared LSTM node
-    shared_lstm = LSTM(INPUT_SIZE,
-                       batch_input_shape=(args.batch_size, INPUT_SIZE, INPUT_SIZE),
-                       stateful=args.stateful)
+    shared_lstm = LSTM(INPUT_SIZE, stateful=args.stateful)
 
     # Run inputs through shared layer
     encoded1 = shared_lstm(text1)
@@ -78,7 +85,7 @@ def run(args):
                                      write_graph=True,
                                      write_images=True,
                                      batch_size=args.batch_size)
-    X, Y = build_datasets(read_text(args.input_file))
+    X, Y = build_datasets(read_text(args.input_file), args.time_steps)
     model.fit(X, Y, epochs=args.epochs, batch_size=args.batch_size,
               callbacks=[tensorboardDisplay])
     scores = model.evaluate(X, Y, batch_size=args.batch_size)
@@ -100,6 +107,11 @@ def parse_arguments():
                         type=int)
     parser.add_argument('--batch-size',
                         help='Number of samples in a batch.',
+                        required=False,
+                        default=15,
+                        type=int)
+    parser.add_argument('--time-steps',
+                        help='Number of time steps from each series.',
                         required=False,
                         default=15,
                         type=int)
