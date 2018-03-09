@@ -16,6 +16,6 @@ which at the first run did not do so well:
 The network was trained on `sts-dev.csv` file with 100 epochs and a batch size of 1.
 ``` shell
 python lstm.py --input-file ../../data/sts-dev.csv \
-	           --batch-size 1 \
-			   --epochs 100
+	       --batch-size 1 \
+	       --epochs 100
 ```
