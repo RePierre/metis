@@ -12,17 +12,18 @@ import numpy as np
 import spacy
 from argparse import ArgumentParser
 import csv
+import sys
 
 INPUT_SIZE = 384
 
 nlp = spacy.load('en')
 
 
-def read_text(file_path):
+def read_text(file_path, num_samples):
     with open(file_path, 'rt', encoding='utf-8') as f:
         reader = csv.reader(f, delimiter='\t')
-        for line in reader:
-            if len(line) >= 7:
+        for number, line in enumerate(reader):
+            if len(line) >= 7 and number < num_samples:
                 yield (line[5], line[6], np.float32(line[4]))
 
 
@@ -85,7 +86,8 @@ def run(args):
                                      write_graph=True,
                                      write_images=True,
                                      batch_size=args.batch_size)
-    X, Y = build_datasets(read_text(args.input_file), args.time_steps)
+    text = read_text(args.input_file, args.num_samples)
+    X, Y = build_datasets(text, args.time_steps)
     model.fit(X, Y, epochs=args.epochs, batch_size=args.batch_size,
               callbacks=[tensorboardDisplay])
     scores = model.evaluate(X, Y, batch_size=args.batch_size)
@@ -124,6 +126,11 @@ def parse_arguments():
                         required=False,
                         default=0.02,
                         type=float)
+    parser.add_argument('--num-samples',
+                        help='Maximum number of samples to read from the input file.',
+                        required=False,
+                        default=sys.maxsize,
+                        type=int)
     parser.add_argument('--loss',
                         help='Loss function.',
                         required=False,
