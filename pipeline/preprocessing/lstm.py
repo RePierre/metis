@@ -13,6 +13,9 @@ import spacy
 from argparse import ArgumentParser
 import csv
 import sys
+import datetime
+import os.path as path
+
 
 INPUT_SIZE = 384
 
@@ -81,7 +84,9 @@ def run(args):
     model.compile(loss=args.loss,
                   optimizer=optimizer,
                   metrics=['accuracy'])
-    tensorboardDisplay = TensorBoard(log_dir=args.tensorboard_log_dir,
+    current_time = datetime.datetime.now().strftime('%Y-%m-%d-%H%M')
+    logdir = path.join(args.tensorboard_log_dir, current_time)
+    tensorboardDisplay = TensorBoard(log_dir=logdir,
                                      histogram_freq=0,
                                      write_graph=True,
                                      write_images=True,
