@@ -105,12 +105,12 @@ def parse_arguments():
     parser.add_argument('--epochs',
                         help='Number of epochs to use for training.',
                         required=False,
-                        default=500,
+                        default=1000,
                         type=int)
     parser.add_argument('--batch-size',
                         help='Number of samples in a batch.',
                         required=False,
-                        default=15,
+                        default=4,
                         type=int)
     parser.add_argument('--time-steps',
                         help='Number of time steps from each series.',
@@ -124,7 +124,7 @@ def parse_arguments():
     parser.add_argument('--learning-rate',
                         help='The learning rate.',
                         required=False,
-                        default=0.02,
+                        default=0.002,
                         type=float)
     parser.add_argument('--num-samples',
                         help='Maximum number of samples to read from the input file.',
