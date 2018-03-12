@@ -110,7 +110,7 @@ def parse_arguments():
     parser.add_argument('--epochs',
                         help='Number of epochs to use for training.',
                         required=False,
-                        default=1000,
+                        default=500,
                         type=int)
     parser.add_argument('--batch-size',
                         help='Number of samples in a batch.',
