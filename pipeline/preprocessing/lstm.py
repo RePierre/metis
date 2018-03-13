@@ -2,7 +2,8 @@ from keras.models import Model
 from keras.layers import Dense
 from keras.layers import LSTM
 from keras.layers import Input
-from keras.optimizers import RMSprop
+from keras.optimizers import SGD, RMSprop, Adagrad
+from keras.optimizers import Adadelta, Adam, Adamax, Nadam
 from keras.preprocessing.sequence import pad_sequences
 from keras.layers import concatenate
 from keras.callbacks import TensorBoard
@@ -20,6 +21,15 @@ import os.path as path
 INPUT_SIZE = 384
 
 nlp = spacy.load('en')
+optimizers = {
+    'sgd': SGD,
+    'rmsprop': RMSprop,
+    'adagrad': Adagrad,
+    'adadelta': Adadelta,
+    'adam': Adam,
+    'adamax': Adamax,
+    'nadam': Nadam
+}
 
 
 def read_text(file_path, num_samples):
@@ -60,6 +70,12 @@ def build_input_node(name, batch_size, time_steps, num_features=INPUT_SIZE):
     return Input(batch_shape=(batch_size, time_steps, num_features), name=name)
 
 
+def build_optimizer(name, lr):
+    ctor = optimizers[name]
+    optimizer = ctor(lr=lr)
+    return optimizer
+
+
 def run(args):
     # Define the input nodes
     text1 = build_input_node('text1', args.batch_size, args.time_steps)
@@ -80,7 +96,7 @@ def run(args):
     output = Dense(1, activation='sigmoid')(concatenated)
 
     model = Model(inputs=[text1, text2], outputs=output)
-    optimizer = RMSprop(lr=args.learning_rate)
+    optimizer = build_optimizer(name=args.optimizer, lr=args.learning_rate)
     model.compile(loss=args.loss,
                   optimizer=optimizer,
                   metrics=['accuracy'])
@@ -136,6 +152,10 @@ def parse_arguments():
                         required=False,
                         default=sys.maxsize,
                         type=int)
+    parser.add_argument('--optimizer',
+                        help="The optimizer to use for training.",
+                        required=False,
+                        default='adam')
     parser.add_argument('--loss',
                         help='Loss function.',
                         required=False,
