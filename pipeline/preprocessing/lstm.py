@@ -88,12 +88,21 @@ def run(args):
     encoded1 = shared_lstm(text1)
     encoded2 = shared_lstm(text2)
 
-    # Concatenate outputs
-    concatenated = concatenate([encoded1, encoded2])
+    # Concatenate outputs to form a tensor of shape (2*batch_size, INPUT_SIZE)
+    concatenated = concatenate([encoded1, encoded2], axis=0)
 
-    # Create the output layer
-    # It should return a single number
-    output = Dense(1, activation='sigmoid')(concatenated)
+    # Input shape: (2*batch_size, INPUT_SIZE)
+    # Output shape: (2*batch_size, batch_size)
+    dense1 = Dense(args.batch_size,
+                   input_shape=(2 * args.batch_size, args.batch_size),
+                   activation='sigmoid')(concatenated)
+    print("Output shape of dense1: {0}".format(dense1.output_shape))
+    # Input shape: (2*batch_size, 1)
+    # Output shape: (0)
+    output = Dense(1,
+                   input_shape=(2 * args.batch_size, 1),
+                   activation='sigmoid')(dense1)
+    print("Output shape of output: {0}".format(output.output_shape))
 
     model = Model(inputs=[text1, text2], outputs=output)
     optimizer = build_optimizer(name=args.optimizer, lr=args.learning_rate)
