@@ -98,13 +98,12 @@ def run(args):
     dense1 = Dense(args.batch_size,
                    input_shape=(2 * args.batch_size, args.batch_size),
                    activation='sigmoid')(concatenated)
-    print("Output shape of dense1: {0}".format(dense1.output_shape))
+
     # Input shape: (2*batch_size, 1)
     # Output shape: (0)
     output = Dense(1,
                    input_shape=(2 * args.batch_size, 1),
                    activation='sigmoid')(dense1)
-    print("Output shape of output: {0}".format(output.output_shape))
 
     model = Model(inputs=[text1, text2], outputs=output)
     optimizer = build_optimizer(name=args.optimizer, lr=args.learning_rate)
