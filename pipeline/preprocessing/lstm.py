@@ -16,8 +16,9 @@ import csv
 import sys
 import datetime
 import os.path as path
+import logging
 
-
+LOG = logging.getLogger(__name__)
 INPUT_SIZE = 384
 
 nlp = spacy.load('en')
@@ -77,6 +78,7 @@ def build_optimizer(name, lr):
 
 
 def run(args):
+    LOG.info("Building model...")
     # Define the input nodes
     text1 = build_input_node('text1', args.batch_size, args.time_steps)
     text2 = build_input_node('text2', args.batch_size, args.time_steps)
@@ -116,10 +118,14 @@ def run(args):
                                      write_graph=True,
                                      write_images=True,
                                      batch_size=args.batch_size)
+    LOG.info("Building dataset...")
     text = read_text(args.input_file, args.num_samples)
     X, Y = build_datasets(text, args.time_steps)
+    LOG.info("Done.")
+    LOG.info("Fitting the model...")
     model.fit(X, Y, epochs=args.epochs, batch_size=args.batch_size,
               callbacks=[tensorboardDisplay])
+    LOG.info("Done.")
     scores = model.evaluate(X, Y, batch_size=args.batch_size)
     print('Model accuracy: {:f}'.format(scores[1] * 100))
 
@@ -177,5 +183,6 @@ def parse_arguments():
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, format='%(asctime)-15s %(levelname)s:%(name)s %(funcName)s: %(message)s')
     args = parse_arguments()
     run(args)
