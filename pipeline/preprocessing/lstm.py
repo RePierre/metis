@@ -48,14 +48,14 @@ def pad_and_reshape(sequence, time_steps):
     return sequence
 
 
-def build_datasets(input, time_steps):
+def build_datasets(input, time_steps, output_shape):
     T1 = []
     T2 = []
     Y = []
     for sentence1, sentence2, score in input:
         T1.append([t.vector for t in nlp(sentence1)])
         T2.append([t.vector for t in nlp(sentence2)])
-        Y.append(score)
+        Y.append(np.full(output_shape, score))
 
     T1 = pad_and_reshape(T1, time_steps)
     T2 = pad_and_reshape(T2, time_steps)
@@ -77,8 +77,7 @@ def build_optimizer(name, lr):
     return optimizer
 
 
-def run(args):
-    LOG.info("Building model...")
+def build_model(args):
     # Define the input nodes
     text1 = build_input_node('text1', args.batch_size, args.time_steps)
     text2 = build_input_node('text2', args.batch_size, args.time_steps)
@@ -96,13 +95,14 @@ def run(args):
     # Input shape: (2*batch_size, INPUT_SIZE)
     # Output shape: (2*batch_size, batch_size)
     dense1 = Dense(args.batch_size,
-                   input_shape=(2 * args.batch_size, args.batch_size),
+                   input_shape=(2 * args.batch_size, INPUT_SIZE),
                    activation='sigmoid')(concatenated)
 
-    # Input shape: (2*batch_size, 1)
-    # Output shape: (0)
+    # Input shape: (2*batch_size, batch_size)
+    # Output shape: (2*batch_size, 1)
+    output_shape = (2 * args.batch_size, 1)
     output = Dense(1,
-                   input_shape=(2 * args.batch_size, 1),
+                   input_shape=(2 * args.batch_size, args.batch_size),
                    activation='sigmoid')(dense1)
 
     model = Model(inputs=[text1, text2], outputs=output)
@@ -110,6 +110,21 @@ def run(args):
     model.compile(loss=args.loss,
                   optimizer=optimizer,
                   metrics=['accuracy'])
+    print('''
+    Model shapes:
+    [concatenated]: {},
+    [dense1]: {},
+    [output]: {}'''.format(
+        concatenated.get_shape(),
+        dense1.get_shape(),
+        output.get_shape()
+    ))
+    return model, output_shape
+
+
+def run(args):
+    LOG.info("Building model...")
+    model, output_shape = build_model(args)
     current_time = datetime.datetime.now().strftime('%Y-%m-%d-%H%M')
     logdir = path.join(args.tensorboard_log_dir, current_time)
     tensorboardDisplay = TensorBoard(log_dir=logdir,
@@ -119,7 +134,7 @@ def run(args):
                                      batch_size=args.batch_size)
     LOG.info("Building dataset...")
     text = read_text(args.input_file, args.num_samples)
-    X, Y = build_datasets(text, args.time_steps)
+    X, Y = build_datasets(text, args.time_steps, output_shape)
     LOG.info("Done.")
     LOG.info("Fitting the model...")
     model.fit(X, Y, epochs=args.epochs, batch_size=args.batch_size,
