@@ -110,15 +110,7 @@ def build_model(args):
     model.compile(loss=args.loss,
                   optimizer=optimizer,
                   metrics=['accuracy'])
-    print('''
-    Model shapes:
-    [concatenated]: {},
-    [dense1]: {},
-    [output]: {}'''.format(
-        concatenated.get_shape(),
-        dense1.get_shape(),
-        output.get_shape()
-    ))
+    LOG.info(model.summary())
     return model, output_shape
 
 
