@@ -2,6 +2,7 @@ from keras.models import Model
 from keras.layers import Dense
 from keras.layers import LSTM
 from keras.layers import Input
+from keras.layers import Lambda
 from keras.optimizers import SGD, RMSprop, Adagrad
 from keras.optimizers import Adadelta, Adam, Adamax, Nadam
 from keras.preprocessing.sequence import pad_sequences
@@ -9,6 +10,7 @@ from keras.layers import concatenate
 from keras.callbacks import TensorBoard
 from scipy.special import expit
 
+import tensorflow as tf
 import numpy as np
 import spacy
 from argparse import ArgumentParser
@@ -48,20 +50,20 @@ def pad_and_reshape(sequence, time_steps):
     return sequence
 
 
-def build_datasets(input, time_steps, output_shape):
+def build_datasets(input, time_steps):
     T1 = []
     T2 = []
     Y = []
     for sentence1, sentence2, score in input:
         T1.append([t.vector for t in nlp(sentence1)])
         T2.append([t.vector for t in nlp(sentence2)])
-        Y.append(np.full(output_shape, score))
+        Y.append(np.reshape(np.asarray(score), (1, 1)))
 
     T1 = pad_and_reshape(T1, time_steps)
     T2 = pad_and_reshape(T2, time_steps)
 
     X = [T1, T2]
-    Y = np.asarray(Y)
+    # Y = np.asarray(Y)
     # fit the scores between 0 and 1
     Y = expit(Y)
     return X, Y
@@ -90,33 +92,42 @@ def build_model(args):
     encoded2 = shared_lstm(text2)
 
     # Concatenate outputs to form a tensor of shape (2*batch_size, INPUT_SIZE)
-    concatenated = concatenate([encoded1, encoded2], axis=0)
+    concatenated = concatenate([encoded1, encoded2], axis=0, name='concatenate')
 
     # Input shape: (2*batch_size, INPUT_SIZE)
     # Output shape: (2*batch_size, batch_size)
     dense1 = Dense(args.batch_size,
                    input_shape=(2 * args.batch_size, INPUT_SIZE),
-                   activation='sigmoid')(concatenated)
+                   activation='sigmoid',
+                   name='dense1')(concatenated)
 
     # Input shape: (2*batch_size, batch_size)
     # Output shape: (2*batch_size, 1)
-    output_shape = (2 * args.batch_size, 1)
-    output = Dense(1,
+    dense2 = Dense(1,
                    input_shape=(2 * args.batch_size, args.batch_size),
-                   activation='sigmoid')(dense1)
+                   activation='sigmoid',
+                   name='dense2')(dense1)
 
-    model = Model(inputs=[text1, text2], outputs=output)
+    # Input shape: (2*batch_size, 1)
+    # Output shape: (1, 2*batch_size)
+    transpose = Lambda(lambda x: tf.transpose(x), name='transpose')(dense2)
+
+    # Input shape: (1, 2*batch_size)
+    # Output shape: (1, 1)
+    dense3 = Dense(1, activation='sigmoid', name='dense3')(transpose)
+
+    model = Model(inputs=[text1, text2], outputs=dense3)
     optimizer = build_optimizer(name=args.optimizer, lr=args.learning_rate)
     model.compile(loss=args.loss,
                   optimizer=optimizer,
                   metrics=['accuracy'])
     LOG.info(model.summary())
-    return model, output_shape
+    return model
 
 
 def run(args):
     LOG.info("Building model...")
-    model, output_shape = build_model(args)
+    model = build_model(args)
     current_time = datetime.datetime.now().strftime('%Y-%m-%d-%H%M')
     logdir = path.join(args.tensorboard_log_dir, current_time)
     tensorboardDisplay = TensorBoard(log_dir=logdir,
@@ -126,7 +137,7 @@ def run(args):
                                      batch_size=args.batch_size)
     LOG.info("Building dataset...")
     text = read_text(args.input_file, args.num_samples)
-    X, Y = build_datasets(text, args.time_steps, output_shape)
+    X, Y = build_datasets(text, args.time_steps)
     LOG.info("Done.")
     LOG.info("Fitting the model...")
     model.fit(X, Y, epochs=args.epochs, batch_size=args.batch_size,
