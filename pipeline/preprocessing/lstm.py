@@ -143,8 +143,23 @@ def run(args):
     model.fit(X, Y, epochs=args.epochs, batch_size=args.batch_size,
               callbacks=[tensorboardDisplay])
     LOG.info("Done.")
+
+    LOG.info("Evaluating model on whole dataset...")
     scores = model.evaluate(X, Y, batch_size=args.batch_size)
-    print('Model accuracy: {:f}'.format(scores[1] * 100))
+    print('Model accuracy on whole dataset: {:f}'.format(scores[1] * 100))
+    LOG.info("Done.")
+
+    LOG.info("Predicting score on first 10 pairs from dataset.")
+    print("Model accuracy on first 10 pairs:")
+    for i in range(10):
+        sentence1, sentence2, score = text[i]
+        x1, x2 = X[0][i], X[1][i]
+        y = model.predict([x1, x2])
+        print("Sentence 1: {}".format(sentence1))
+        print("Sentence 2: {}".format(sentence2))
+        print("Assigned score: {}".format(score))
+        print("Predicted score: {}".format(y))
+    LOG.info("Done.")
 
 
 def parse_arguments():
