@@ -57,13 +57,13 @@ def build_datasets(input, time_steps):
     for sentence1, sentence2, score in input:
         T1.append([t.vector for t in nlp(sentence1)])
         T2.append([t.vector for t in nlp(sentence2)])
-        Y.append(np.reshape(np.asarray(score), (1, 1)))
+        Y.append(score)
 
     T1 = pad_and_reshape(T1, time_steps)
     T2 = pad_and_reshape(T2, time_steps)
 
     X = [T1, T2]
-    # Y = np.asarray(Y)
+
     # fit the scores between 0 and 1
     Y = expit(Y)
     return X, Y
