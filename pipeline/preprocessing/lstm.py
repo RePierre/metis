@@ -140,7 +140,7 @@ def run(args):
     earlyStopping = EarlyStopping(patience=10)
     reduceLR = ReduceLROnPlateau(factor=0.0002, patience=5)
     LOG.info("Building dataset...")
-    text = read_text(args.input_file, args.num_samples)
+    text = list(read_text(args.input_file, args.num_samples))
     X, Y = build_datasets(text, args.time_steps)
     LOG.info("Done.")
     LOG.info("Fitting the model...")
