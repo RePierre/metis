@@ -137,8 +137,8 @@ def run(args):
                                      write_graph=True,
                                      write_images=True,
                                      batch_size=args.batch_size)
-    earlyStopping = EarlyStopping(patience=10)
-    reduceLR = ReduceLROnPlateau(factor=0.0002, patience=5)
+    earlyStopping = EarlyStopping(monitor='loss', patience=10)
+    reduceLR = ReduceLROnPlateau(monitor='loss', factor=0.0002, patience=5)
     LOG.info("Building dataset...")
     text = list(read_text(args.input_file, args.num_samples))
     X, Y = build_datasets(text, args.time_steps)
