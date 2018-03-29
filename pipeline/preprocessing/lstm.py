@@ -87,7 +87,7 @@ def build_model(args):
     text2 = build_input_node('text2', args.batch_size, args.time_steps)
 
     # Create the shared LSTM node
-    shared_lstm = LSTM(INPUT_SIZE, stateful=args.stateful)
+    shared_lstm = LSTM(INPUT_SIZE, stateful=args.stateful, name='lstm1')
 
     # Run inputs through shared layer
     encoded1 = shared_lstm(text1)
