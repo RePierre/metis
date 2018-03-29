@@ -2,13 +2,18 @@ from keras.models import Model
 from keras.layers import Dense
 from keras.layers import LSTM
 from keras.layers import Input
+from keras.layers import Lambda
 from keras.optimizers import SGD, RMSprop, Adagrad
 from keras.optimizers import Adadelta, Adam, Adamax, Nadam
 from keras.preprocessing.sequence import pad_sequences
 from keras.layers import concatenate
 from keras.callbacks import TensorBoard
+from keras.callbacks import EarlyStopping
+from keras.callbacks import ReduceLROnPlateau
 from scipy.special import expit
+from pandas import DataFrame
 
+import tensorflow as tf
 import numpy as np
 import spacy
 from argparse import ArgumentParser
@@ -16,8 +21,9 @@ import csv
 import sys
 import datetime
 import os.path as path
+import logging
 
-
+LOG = logging.getLogger(__name__)
 INPUT_SIZE = 384
 
 nlp = spacy.load('en')
@@ -60,7 +66,7 @@ def build_datasets(input, time_steps):
     T2 = pad_and_reshape(T2, time_steps)
 
     X = [T1, T2]
-    Y = np.asarray(Y)
+
     # fit the scores between 0 and 1
     Y = expit(Y)
     return X, Y
@@ -76,43 +82,96 @@ def build_optimizer(name, lr):
     return optimizer
 
 
-def run(args):
+def build_model(args):
     # Define the input nodes
     text1 = build_input_node('text1', args.batch_size, args.time_steps)
     text2 = build_input_node('text2', args.batch_size, args.time_steps)
 
     # Create the shared LSTM node
-    shared_lstm = LSTM(INPUT_SIZE, stateful=args.stateful)
+    shared_lstm = LSTM(INPUT_SIZE, stateful=args.stateful, name='lstm1')
 
     # Run inputs through shared layer
     encoded1 = shared_lstm(text1)
     encoded2 = shared_lstm(text2)
 
-    # Concatenate outputs
-    concatenated = concatenate([encoded1, encoded2])
+    # Concatenate outputs to form a tensor of shape (2*batch_size, INPUT_SIZE)
+    concatenated = concatenate([encoded1, encoded2], axis=0, name='concatenate')
 
-    # Create the output layer
-    # It should return a single number
-    output = Dense(1, activation='sigmoid')(concatenated)
+    # Input shape: (2*batch_size, INPUT_SIZE)
+    # Output shape: (2*batch_size, batch_size)
+    dense1 = Dense(args.batch_size,
+                   input_shape=(2 * args.batch_size, INPUT_SIZE),
+                   activation='sigmoid',
+                   name='dense1')(concatenated)
 
-    model = Model(inputs=[text1, text2], outputs=output)
+    # Input shape: (2*batch_size, batch_size)
+    # Output shape: (2*batch_size, 1)
+    dense2 = Dense(1,
+                   input_shape=(2 * args.batch_size, args.batch_size),
+                   activation='sigmoid',
+                   name='dense2')(dense1)
+
+    # Input shape: (2*batch_size, 1)
+    # Output shape: (1, 2*batch_size)
+    transpose = Lambda(lambda x: tf.transpose(x), name='transpose')(dense2)
+
+    # Input shape: (1, 2*batch_size)
+    # Output shape: (1, 1)
+    dense3 = Dense(1, activation='sigmoid', name='dense3')(transpose)
+
+    model = Model(inputs=[text1, text2], outputs=dense3)
     optimizer = build_optimizer(name=args.optimizer, lr=args.learning_rate)
     model.compile(loss=args.loss,
                   optimizer=optimizer,
                   metrics=['accuracy'])
+    LOG.info(model.summary())
+    return model
+
+
+def run(args):
+    LOG.info("Building model...")
+    model = build_model(args)
     current_time = datetime.datetime.now().strftime('%Y-%m-%d-%H%M')
     logdir = path.join(args.tensorboard_log_dir, current_time)
     tensorboardDisplay = TensorBoard(log_dir=logdir,
                                      histogram_freq=0,
                                      write_graph=True,
                                      write_images=True,
+                                     write_grads=True,
                                      batch_size=args.batch_size)
-    text = read_text(args.input_file, args.num_samples)
+    early_stopping = EarlyStopping(monitor='loss', patience=6)
+    reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.0002, patience=3)
+    LOG.info("Building dataset...")
+    text = list(read_text(args.input_file, args.num_samples))
     X, Y = build_datasets(text, args.time_steps)
+    LOG.info("Done.")
+    LOG.info("Fitting the model...")
     model.fit(X, Y, epochs=args.epochs, batch_size=args.batch_size,
-              callbacks=[tensorboardDisplay])
+              callbacks=[tensorboardDisplay, reduce_lr, early_stopping])
+    LOG.info("Done.")
+
+    LOG.info("Evaluating model on whole dataset...")
     scores = model.evaluate(X, Y, batch_size=args.batch_size)
-    print('Model accuracy: {:f}'.format(scores[1] * 100))
+    print('Model accuracy on whole dataset: {:f}'.format(scores[1] * 100))
+    LOG.info("Done.")
+
+    LOG.info("Predicting score on first 10 pairs from dataset.")
+    print("Model accuracy on first 10 pairs:")
+    predictions = []
+    for i in range(10):
+        sentence1, sentence2, score = text[i]
+        x1 = np.reshape(X[0][i], (args.batch_size, args.time_steps, INPUT_SIZE))
+        x2 = np.reshape(X[1][i], (args.batch_size, args.time_steps, INPUT_SIZE))
+        y = model.predict([x1, x2])
+        predictions.append({
+            "Assigned score": expit(score),
+            "Predicted score": y[0][0],
+            "Sentence 1": sentence1,
+            "Sentence 2": sentence2,
+        })
+    df = DataFrame.from_records(predictions)
+    print(df)
+    LOG.info("Done.")
 
 
 def parse_arguments():
@@ -168,5 +227,6 @@ def parse_arguments():
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, format='%(asctime)-15s %(levelname)s:%(name)s %(funcName)s: %(message)s')
     args = parse_arguments()
     run(args)
