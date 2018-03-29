@@ -136,6 +136,7 @@ def run(args):
                                      histogram_freq=0,
                                      write_graph=True,
                                      write_images=True,
+                                     write_grads=True,
                                      batch_size=args.batch_size)
     early_stopping = EarlyStopping(monitor='loss', patience=6)
     reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.0002, patience=3)
