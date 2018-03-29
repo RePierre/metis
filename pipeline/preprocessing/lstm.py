@@ -11,6 +11,7 @@ from keras.callbacks import TensorBoard
 from keras.callbacks import EarlyStopping
 from keras.callbacks import ReduceLROnPlateau
 from scipy.special import expit
+from pandas import DataFrame
 
 import tensorflow as tf
 import numpy as np
@@ -156,15 +157,20 @@ def run(args):
 
     LOG.info("Predicting score on first 10 pairs from dataset.")
     print("Model accuracy on first 10 pairs:")
+    predictions = []
     for i in range(10):
         sentence1, sentence2, score = text[i]
         x1 = np.reshape(X[0][i], (args.batch_size, args.time_steps, INPUT_SIZE))
         x2 = np.reshape(X[1][i], (args.batch_size, args.time_steps, INPUT_SIZE))
         y = model.predict([x1, x2])
-        print("Sentence 1: {}".format(sentence1))
-        print("Sentence 2: {}".format(sentence2))
-        print("Assigned score: {}".format(expit(score)))
-        print("Predicted score: {}".format(y))
+        predictions.append({
+            "Assigned score": expit(score),
+            "Predicted score": y[0][0],
+            "Sentence 1": sentence1,
+            "Sentence 2": sentence2,
+        })
+    df = DataFrame.from_records(predictions)
+    print(df)
     LOG.info("Done.")
 
 
