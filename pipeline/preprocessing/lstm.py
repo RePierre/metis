@@ -137,15 +137,15 @@ def run(args):
                                      write_graph=True,
                                      write_images=True,
                                      batch_size=args.batch_size)
-    earlyStopping = EarlyStopping(monitor='loss', patience=10)
-    reduceLR = ReduceLROnPlateau(monitor='loss', factor=0.0002, patience=5)
+    early_stopping = EarlyStopping(monitor='loss', patience=6)
+    reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.0002, patience=3)
     LOG.info("Building dataset...")
     text = list(read_text(args.input_file, args.num_samples))
     X, Y = build_datasets(text, args.time_steps)
     LOG.info("Done.")
     LOG.info("Fitting the model...")
     model.fit(X, Y, epochs=args.epochs, batch_size=args.batch_size,
-              callbacks=[tensorboardDisplay, reduceLR, earlyStopping])
+              callbacks=[tensorboardDisplay, reduce_lr, early_stopping])
     LOG.info("Done.")
 
     LOG.info("Evaluating model on whole dataset...")
