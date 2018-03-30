@@ -84,7 +84,7 @@ def build_optimizer(name, lr):
 
 
 def euclidean_distance(y_true, y_pred):
-    return K.sqrt(K.sum(K.square(y_true - y_pred)), axis=-1, keepdims=True)
+    return K.sqrt(K.sum(K.square(y_true - y_pred)))
 
 
 def build_model(args):
