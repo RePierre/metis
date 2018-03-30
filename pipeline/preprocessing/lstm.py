@@ -128,6 +128,23 @@ def build_model(args):
     return model
 
 
+def evaluate(model, text, X, Y, input_shape, num_samples):
+    predictions = []
+    for i in range(num_samples):
+        sentence1, sentence2, score = text[i]
+        x1 = np.reshape(X[0][i], input_shape)
+        x2 = np.reshape(X[1][i], input_shape)
+        y = model.predict([x1, x2])
+        predictions.append({
+            "Assigned score": expit(score),
+            "Predicted score": y[0][0],
+            "Sentence 1": sentence1,
+            "Sentence 2": sentence2,
+        })
+    df = DataFrame.from_records(predictions)
+    return df
+
+
 def run(args):
     LOG.info("Building model...")
     model = build_model(args)
@@ -155,22 +172,11 @@ def run(args):
     print('Model accuracy on whole dataset: {:f}'.format(scores[1] * 100))
     LOG.info("Done.")
 
-    LOG.info("Predicting score on first 10 pairs from dataset.")
-    print("Model accuracy on first 10 pairs:")
-    predictions = []
-    for i in range(10):
-        sentence1, sentence2, score = text[i]
-        x1 = np.reshape(X[0][i], (args.batch_size, args.time_steps, INPUT_SIZE))
-        x2 = np.reshape(X[1][i], (args.batch_size, args.time_steps, INPUT_SIZE))
-        y = model.predict([x1, x2])
-        predictions.append({
-            "Assigned score": expit(score),
-            "Predicted score": y[0][0],
-            "Sentence 1": sentence1,
-            "Sentence 2": sentence2,
-        })
-    df = DataFrame.from_records(predictions)
-    print(df)
+    LOG.info("Predicting score on first 100 pairs from dataset.")
+    df = evaluate(model, text, X, Y,
+                  (args.batch_size, args.time_steps, INPUT_SIZE), 100)
+    df.to_csv(args.output_file)
+    LOG.info("Predictions saved to {}".format(args.output_file))
     LOG.info("Done.")
 
 
@@ -223,6 +229,10 @@ def parse_arguments():
                         help='The path of the directory where to save the log files to be parsed by TensorBoard',
                         required=False,
                         default='./logs')
+    parser.add_argument('--output-file',
+                        help='The name of the file where to save predictions.',
+                        required=False,
+                        default='predictions.csv')
     return parser.parse_args()
 
 
