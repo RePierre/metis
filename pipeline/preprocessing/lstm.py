@@ -10,6 +10,7 @@ from keras.layers import concatenate
 from keras.callbacks import TensorBoard
 from keras.callbacks import EarlyStopping
 from keras.callbacks import ReduceLROnPlateau
+from keras import backend as K
 from scipy.special import expit
 from pandas import DataFrame
 
@@ -82,6 +83,10 @@ def build_optimizer(name, lr):
     return optimizer
 
 
+def euclidean_distance(y_true, y_pred):
+    return K.sqrt(K.sum(K.square(y_true - y_pred)), axis=-1, keepdims=True)
+
+
 def build_model(args):
     # Define the input nodes
     text1 = build_input_node('text1', args.batch_size, args.time_steps)
@@ -123,7 +128,7 @@ def build_model(args):
     optimizer = build_optimizer(name=args.optimizer, lr=args.learning_rate)
     model.compile(loss=args.loss,
                   optimizer=optimizer,
-                  metrics=['accuracy'])
+                  metrics=['accuracy', euclidean_distance])
     LOG.info(model.summary())
     return model
 
