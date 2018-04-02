@@ -13,6 +13,7 @@ from keras.callbacks import ReduceLROnPlateau
 from keras import backend as K
 from scipy.special import expit
 from pandas import DataFrame
+from random import randint
 
 import tensorflow as tf
 import numpy as np
@@ -133,19 +134,22 @@ def build_model(args):
     return model
 
 
-def evaluate(model, text, X, Y, input_shape, num_samples):
+def evaluate(model, text, X, Y, input_shape, num_batches):
     predictions = []
-    for i in range(num_samples):
-        sentence1, sentence2, score = text[i]
-        x1 = np.reshape(X[0][i], input_shape)
-        x2 = np.reshape(X[1][i], input_shape)
+    for _ in range(num_batches):
+        indices = [randint(0, len(text)) for _ in range(input_shape[0])]
+        x1 = np.reshape([X[0][i] for i in indices], input_shape)
+        x2 = np.reshape([X[1][i] for i in indices], input_shape)
         y = model.predict([x1, x2])
-        predictions.append({
-            "Assigned score": expit(score),
-            "Predicted score": y[0][0],
-            "Sentence 1": sentence1,
-            "Sentence 2": sentence2,
-        })
+
+        for i, index in enumerate(indices):
+            sentence1, sentence2, score = text[index]
+            predictions.append({
+                "Assigned score": expit(score),
+                "Predicted score": y[i][0],
+                "Sentence 1": sentence1,
+                "Sentence 2": sentence2,
+            })
     df = DataFrame.from_records(predictions)
     return df
 
