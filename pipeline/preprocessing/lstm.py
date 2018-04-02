@@ -137,7 +137,7 @@ def build_model(args):
 def evaluate(model, text, X, Y, input_shape, num_batches):
     predictions = []
     for _ in range(num_batches):
-        indices = [randint(0, len(text)) for _ in range(input_shape[0])]
+        indices = [randint(0, len(text) - 1) for _ in range(input_shape[0])]
         x1 = np.reshape([X[0][i] for i in indices], input_shape)
         x2 = np.reshape([X[1][i] for i in indices], input_shape)
         y = model.predict([x1, x2])
@@ -145,10 +145,9 @@ def evaluate(model, text, X, Y, input_shape, num_batches):
         for i, index in enumerate(indices):
             sentence1, sentence2, score = text[index]
             predictions.append({
+                "Original assigned score": score,
                 "Assigned score": expit(score),
                 "Predicted score": y[i][0],
-                "Sentence 1": sentence1,
-                "Sentence 2": sentence2,
             })
     df = DataFrame.from_records(predictions)
     return df
