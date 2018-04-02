@@ -129,7 +129,7 @@ def build_model(args):
     optimizer = build_optimizer(name=args.optimizer, lr=args.learning_rate)
     model.compile(loss=args.loss,
                   optimizer=optimizer,
-                  metrics=['accuracy', euclidean_distance])
+                  metrics=[euclidean_distance])
     LOG.info(model.summary())
     return model
 
