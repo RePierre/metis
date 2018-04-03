@@ -241,7 +241,7 @@ def parse_arguments():
                         default='predictions.csv')
     parser.add_argument('--reduce-lr-factor',
                         help='The factor parameter for ReduceLROnPlateau callback.',
-                        requied=False,
+                        required=False,
                         default=0.0002,
                         type=float)
     parser.add_argument('--reduce-lr-patience',
