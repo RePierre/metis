@@ -68,7 +68,7 @@ def build_datasets(input, time_steps):
     T2 = pad_and_reshape(T2, time_steps)
 
     X = [T1, T2]
-
+    Y = np.asarray(Y)
     return X, Y
 
 
