@@ -164,8 +164,8 @@ def run(args):
                                      write_images=True,
                                      write_grads=True,
                                      batch_size=args.batch_size)
-    early_stopping = EarlyStopping(monitor='loss', patience=6)
-    reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.0002, patience=3)
+    early_stopping = EarlyStopping(monitor='loss', patience=args.early_stopping_patience)
+    reduce_lr = ReduceLROnPlateau(monitor='loss', factor=args.reduce_lr_factor, patience=args.reduce_lr_patience)
     LOG.info("Building dataset...")
     text = list(read_text(args.input_file, args.num_samples))
     X, Y = build_datasets(text, args.time_steps)
@@ -241,6 +241,21 @@ def parse_arguments():
                         help='The name of the file where to save predictions.',
                         required=False,
                         default='predictions.csv')
+    parser.add_argument('--reduce-lr-factor',
+                        help='The factor parameter for ReduceLROnPlateau callback.',
+                        requied=False,
+                        default=0.0002,
+                        type=float)
+    parser.add_argument('--reduce-lr-patience',
+                        help='The patience parameter for ReduceLROnPlateau callback.',
+                        required=False,
+                        default=30,
+                        type=int)
+    parser.add_argument('--early-stopping-patience',
+                        help='The patience parameter for EarlyStopping callback.',
+                        required=False,
+                        default=60,
+                        type=int)
     return parser.parse_args()
 
 
