@@ -69,8 +69,6 @@ def build_datasets(input, time_steps):
 
     X = [T1, T2]
 
-    # fit the scores between 0 and 1
-    Y = expit(Y)
     return X, Y
 
 
