@@ -107,14 +107,14 @@ def build_model(args):
     # Output shape: (2*batch_size, batch_size)
     dense1 = Dense(args.batch_size,
                    input_shape=(2 * args.batch_size, INPUT_SIZE),
-                   activation='sigmoid',
+                   activation='linear',
                    name='dense1')(concatenated)
 
     # Input shape: (2*batch_size, batch_size)
     # Output shape: (2*batch_size, 1)
     dense2 = Dense(1,
                    input_shape=(2 * args.batch_size, args.batch_size),
-                   activation='sigmoid',
+                   activation='linear',
                    name='dense2')(dense1)
 
     # Input shape: (2*batch_size, 1)
@@ -123,7 +123,7 @@ def build_model(args):
 
     # Input shape: (1, 2*batch_size)
     # Output shape: (1, 1)
-    dense3 = Dense(1, activation='sigmoid', name='dense3')(transpose)
+    dense3 = Dense(1, activation='linear', name='dense3')(transpose)
 
     model = Model(inputs=[text1, text2], outputs=dense3)
     optimizer = build_optimizer(name=args.optimizer, lr=args.learning_rate)
