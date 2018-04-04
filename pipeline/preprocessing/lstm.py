@@ -11,9 +11,8 @@ from keras.callbacks import TensorBoard
 from keras.callbacks import EarlyStopping
 from keras.callbacks import ReduceLROnPlateau
 from keras import backend as K
-from scipy.special import expit
 from pandas import DataFrame
-from random import randint
+from sklearn.model_selection import train_test_split
 
 import tensorflow as tf
 import numpy as np
@@ -24,6 +23,7 @@ import sys
 import datetime
 import os.path as path
 import logging
+import math
 
 LOG = logging.getLogger(__name__)
 INPUT_SIZE = 384
@@ -55,21 +55,34 @@ def pad_and_reshape(sequence, time_steps):
     return sequence
 
 
-def build_datasets(input, time_steps):
-    T1 = []
-    T2 = []
-    Y = []
-    for sentence1, sentence2, score in input:
-        T1.append([t.vector for t in nlp(sentence1)])
-        T2.append([t.vector for t in nlp(sentence2)])
-        Y.append(score)
+def build_datasets(data, batch_size, time_steps):
+    t1, t2, y = [], [], []
+    for sentence1, sentence2, score in data:
+        t1.append([t.vector for t in nlp(sentence1)])
+        t2.append([t.vector for t in nlp(sentence2)])
+        y.append(score)
 
-    T1 = pad_and_reshape(T1, time_steps)
-    T2 = pad_and_reshape(T2, time_steps)
+    t1 = pad_and_reshape(t1, time_steps)
+    t2 = pad_and_reshape(t2, time_steps)
+    y = np.asarray(y)
 
-    X = [T1, T2]
-    Y = np.asarray(Y)
-    return X, Y
+    # Split dataset into train/test
+    t1_train, t1_test, t2_train, t2_test, y_train, y_test = train_test_split(t1, t2, y)
+
+    # Adjust collection sizes to have full batches of data
+    x_train = [adjust_size(t1_train, batch_size),
+               adjust_size(t2_train, batch_size)]
+    x_test = [adjust_size(t1_test, batch_size),
+              adjust_size(t2_test, batch_size)]
+    y_train = adjust_size(y_train, batch_size)
+    y_test = adjust_size(y_test, batch_size)
+
+    return x_train, x_test, y_train, y_test
+
+
+def adjust_size(collection, batch_size):
+    num_samples = int(len(collection) / batch_size) * batch_size
+    return collection[:num_samples]
 
 
 def build_input_node(name, batch_size, time_steps, num_features=INPUT_SIZE):
@@ -134,18 +147,18 @@ def build_model(args):
 
 def evaluate(model, text, X, Y, input_shape, num_batches):
     predictions = []
-    for _ in range(num_batches):
-        indices = [randint(0, len(text) - 1) for _ in range(input_shape[0])]
-        x1 = np.reshape([X[0][i] for i in indices], input_shape)
-        x2 = np.reshape([X[1][i] for i in indices], input_shape)
-        y = model.predict([x1, x2])
-
-        for i, index in enumerate(indices):
-            sentence1, sentence2, score = text[index]
+    batch_size = input_shape[0]
+    num_slices = math.ceil(len(Y) / batch_size)
+    for x1, x2, y in zip(np.array_split(X[0], num_slices),
+                         np.array_split(X[1], num_slices),
+                         np.array_split(Y, num_slices)):
+        x = [np.reshape(x1, input_shape),
+             np.reshape(x1, input_shape)]
+        y_ = model.predict(x)
+        for i in range(len(y_)):
             predictions.append({
-                "Original assigned score": score,
-                "Assigned score": expit(score),
-                "Predicted score": y[i][0],
+                "Original score": y[i],
+                "Predicted score": y_[i][0]
             })
     df = DataFrame.from_records(predictions)
     return df
@@ -162,24 +175,27 @@ def run(args):
                                      write_images=True,
                                      write_grads=True,
                                      batch_size=args.batch_size)
-    early_stopping = EarlyStopping(monitor='loss', patience=args.early_stopping_patience)
-    reduce_lr = ReduceLROnPlateau(monitor='loss', factor=args.reduce_lr_factor, patience=args.reduce_lr_patience)
+    early_stopping = EarlyStopping(monitor='loss',
+                                   patience=args.early_stopping_patience)
+    reduce_lr = ReduceLROnPlateau(monitor='loss',
+                                  factor=args.reduce_lr_factor,
+                                  patience=args.reduce_lr_patience)
     LOG.info("Building dataset...")
     text = list(read_text(args.input_file, args.num_samples))
-    X, Y = build_datasets(text, args.time_steps)
+    x_train, x_test, y_train, y_test = build_datasets(text, args.batch_size, args.time_steps)
     LOG.info("Done.")
     LOG.info("Fitting the model...")
-    model.fit(X, Y, epochs=args.epochs, batch_size=args.batch_size,
+    model.fit(x_train, y_train, epochs=args.epochs, batch_size=args.batch_size,
               callbacks=[tensorboardDisplay, reduce_lr, early_stopping])
     LOG.info("Done.")
 
-    LOG.info("Evaluating model on whole dataset...")
-    scores = model.evaluate(X, Y, batch_size=args.batch_size)
-    print('Model accuracy on whole dataset: {:f}'.format(scores[1] * 100))
+    LOG.info("Evaluating model...")
+    scores = model.evaluate(x_test, y_test, batch_size=args.batch_size)
+    print('Model accuracy: {:f}'.format(scores[1] * 100))
     LOG.info("Done.")
 
-    LOG.info("Predicting score on first 100 pairs from dataset.")
-    df = evaluate(model, text, X, Y,
+    LOG.info("Predicting score on test split...")
+    df = evaluate(model, text, x_test, y_test,
                   (args.batch_size, args.time_steps, INPUT_SIZE), 100)
     df.to_csv(args.output_file)
     LOG.info("Predictions saved to {}".format(args.output_file))
