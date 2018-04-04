@@ -40,11 +40,11 @@ optimizers = {
 }
 
 
-def read_text(file_path, num_samples):
+def read_text(file_path):
     with open(file_path, 'rt', encoding='utf-8') as f:
         reader = csv.reader(f, delimiter='\t')
         for number, line in enumerate(reader):
-            if len(line) >= 7 and number < num_samples:
+            if len(line) >= 7:
                 yield (line[5], line[6], np.float32(line[4]))
 
 
@@ -181,7 +181,7 @@ def run(args):
                                   factor=args.reduce_lr_factor,
                                   patience=args.reduce_lr_patience)
     LOG.info("Building dataset...")
-    text = list(read_text(args.input_file, args.num_samples))
+    text = list(read_text(args.input_file))
     x_train, x_test, y_train, y_test = build_datasets(text, args.batch_size, args.time_steps)
     LOG.info("Done.")
     LOG.info("Fitting the model...")
@@ -234,11 +234,6 @@ def parse_arguments():
                         required=False,
                         default=0.002,
                         type=float)
-    parser.add_argument('--num-samples',
-                        help='Maximum number of samples to read from the input file.',
-                        required=False,
-                        default=sys.maxsize,
-                        type=int)
     parser.add_argument('--optimizer',
                         help="The optimizer to use for training.",
                         required=False,
