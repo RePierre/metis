@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 from pandas import DataFrame
-import preprocessing.lstm as lstm
+import training.lstm as lstm
 import pandas
 
 
