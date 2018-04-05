@@ -13,6 +13,18 @@ def parse_arguments():
     return parser.parse_args()
 
 
+def plot_predictions(predictions_file):
+    def plot_to_image(dataframe, column, image):
+        df = dataframe[column]
+        plt = df.plot()
+        plt.save(image)
+    df = pandas.read_csv(predictions_file)
+    plot_to_image(df, 'Original score',
+                  '{}.originalscore.png'.format(predictions_file))
+    plot_to_image(df, 'Predicted score',
+                  '{}.predictedscore.png'.format(predictions_file))
+
+
 def run_experiments(args):
     df = pandas.read_csv(args.experiments_file)
     for row in df.itertuples():
