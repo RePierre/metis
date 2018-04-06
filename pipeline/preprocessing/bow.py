@@ -23,6 +23,7 @@ def run():
 
     # integer encode documents
     encoded_docs = t.texts_to_matrix(docs, mode='tfidf')
+
     print(encoded_docs)
 
     for i in range(len(docs)):
