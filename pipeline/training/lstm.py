@@ -5,7 +5,6 @@ from keras.layers import Input
 from keras.layers import Lambda
 from keras.optimizers import SGD, RMSprop, Adagrad
 from keras.optimizers import Adadelta, Adam, Adamax, Nadam
-from keras.preprocessing.sequence import pad_sequences
 from keras.layers import concatenate
 from keras.callbacks import TensorBoard
 from keras.callbacks import EarlyStopping
@@ -13,7 +12,7 @@ from keras.callbacks import ReduceLROnPlateau
 from keras import backend as K
 from pandas import DataFrame
 from sklearn.model_selection import train_test_split
-
+from preprocessing.inputencoder import pad_and_reshape, encode_text
 import tensorflow as tf
 import numpy as np
 import spacy
@@ -48,18 +47,11 @@ def read_text(file_path):
                 yield (line[5], line[6], np.float32(line[4]))
 
 
-def pad_and_reshape(sequence, time_steps):
-    sequence = pad_sequences(sequence, maxlen=time_steps, dtype='float32')
-    num_samples, num_features = sequence.shape[0], INPUT_SIZE
-    sequence = np.reshape(sequence, (num_samples, time_steps, num_features))
-    return sequence
-
-
 def build_datasets(data, batch_size, time_steps):
     t1, t2, y = [], [], []
     for sentence1, sentence2, score in data:
-        t1.append([t.vector for t in nlp(sentence1)])
-        t2.append([t.vector for t in nlp(sentence2)])
+        t1.append([t for t in encode_text(sentence1)])
+        t2.append([t for t in encode_text(sentence2)])
         y.append(score)
 
     t1 = pad_and_reshape(t1, time_steps)
