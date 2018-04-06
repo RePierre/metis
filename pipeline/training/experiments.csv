@@ -1,0 +1,11 @@
+run_id,input_file,epochs,batch_size,time_steps,stateful,learning_rate,optimizer,loss,output_file,reduce_lr_factor,reduce_lr_patience,early_stopping_patience,tensorboard_log_dir
+01,../../data/sts-dev.csv,1000,8,15,False,0.001,adam,logcosh,predictions-01.csv,0.0002,30,60,./logs
+02,../../data/sts-dev.csv,1000,8,15,False,0.002,adam,logcosh,predictions-02.csv,0.0002,30,60,./logs
+03,../../data/sts-dev.csv,1000,8,15,False,0.003,adam,logcosh,predictions-03.csv,0.0002,30,60,./logs
+04,../../data/sts-dev.csv,1000,8,15,False,0.005,adam,logcosh,predictions-04.csv,0.0002,30,60,./logs
+05,../../data/sts-dev.csv,1000,8,15,False,0.008,adam,logcosh,predictions-05.csv,0.0002,30,60,./logs
+06,../../data/sts-dev.csv,1000,8,15,False,0.013,adam,logcosh,predictions-06.csv,0.0002,30,60,./logs
+07,../../data/sts-dev.csv,1000,8,15,False,0.021,adam,logcosh,predictions-07.csv,0.0002,30,60,./logs
+08,../../data/sts-dev.csv,1000,8,15,False,0.034,adam,logcosh,predictions-08.csv,0.0002,30,60,./logs
+09,../../data/sts-dev.csv,1000,8,15,False,0.055,adam,logcosh,predictions-09.csv,0.0002,30,60,./logs
+10,../../data/sts-dev.csv,1000,8,15,False,0.089,adam,logcosh,predictions-10.csv,0.0002,30,60,./logs

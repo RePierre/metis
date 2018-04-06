@@ -105,3 +105,9 @@ ENV/
 
 # Emacs backup files
 *~
+
+# Various shell files
+*.sh
+
+# Tensorboard logs
+logs/

@@ -46,16 +46,38 @@ class DataStore:
                 host=self._host,
                 port=self._port)
         for _, pub in enumerate(publications):
-            article = self._convert_to_article(pub)
-            if not article.text:
-                parse_error = self._convert_to_parse_error(pub)
+            article, parse_error = self._convert_to_article(pub)
+            if not article and not parse_error:
+                # Nothing to save
+                continue
+            if parse_error:
                 parse_error.save()
+                continue
+            authors = self._convert_authors(pub)
+            if not authors:
+                parse_error = ParseError()
+                parse_error.doi = article.doi
+                parse_error.message = "Could not parse authors."
+                parse_error.save()
+                continue
+            # If an article with same doi exists do not insert
+            if Article.objects(doi=article.doi):
                 continue
             for author in self._convert_authors(pub):
                 author.save()
                 article.authors.append(author)
             self._log_article_save(article)
             article.save()
+
+    def load_articles(self, limit=None):
+        connect(db=self._dbName,
+                host=self._host,
+                port=self._port)
+        articles = Article.objects
+        if limit:
+            articles = articles[:limit]
+        for a in articles:
+            yield a
 
     def _convert_authors(self, pub):
         if not pub['authors']:
@@ -66,13 +88,36 @@ class DataStore:
                 if a is not None]
 
     def _convert_to_article(self, pub):
+        doi = self._get_article_doi(pub)
+        if not doi:
+            return None, None
+
+        title = self._get_text(pub['article_title'])
+        if not title:
+            return None, self._create_parse_error(doi,
+                                                  "Could not parse title.")
+
+        keywords = self._convert_article_keywords(pub)
+        if not keywords:
+            return None, self._create_parse_error(doi,
+                                                  "Could not parse keywords.")
+
+        abstract = self._get_text(pub['abstract'])
+        if not abstract:
+            return None, self._create_parse_error(doi,
+                                                  "Could not parse abstract.")
+
+        text = self._convert_article_text(pub)
+        if not text:
+            return None, self._create_parse_error(doi,
+                                                  "Could not parse article text.")
         article = Article()
-        article.doi = self._get_article_doi(pub)
-        article.title = self._get_text(pub['article_title'])
-        article.keywords = self._convert_article_keywords(pub)
-        article.abstract = self._get_text(pub['abstract'])
-        article.text = self._convert_article_text(pub)
-        return article
+        article.doi = doi
+        article.title = title
+        article.keywords = keywords
+        article.abstract = abstract
+        article.text = text
+        return article, None
 
     def _convert_article_keywords(self, pub):
         kwdlist = pub['keywords'] if 'keywords' in pub else []
@@ -101,11 +146,10 @@ class DataStore:
         message = "Saving article {}.".format(article.doi)
         self._logger.info(message)
 
-    def _convert_to_parse_error(self, pub):
-        parse_error = ParseError()
-        parse_error.doi = self._get_article_doi(pub)
-        parse_error.message = 'Article {} has no text.'.format(self._get_article_doi(pub))
-        return parse_error
-
     def _get_article_doi(self, pub):
         return pub['doi']
+
+    def _create_parse_error(self, doi, message):
+        err = ParseError()
+        err.doi = doi
+        err.message = message

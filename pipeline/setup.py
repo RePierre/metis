@@ -1,4 +1,14 @@
 from setuptools import setup, find_packages
+from setuptools.command.install import install as _install
+
+
+class CustomInstall(_install):
+    def run(self):
+        _install.do_egg_install(self)
+        import nltk
+        print("Downloading wordnet corpus.")
+        nltk.download("wordnet")
+
 
 version = '0.1'
 
@@ -11,11 +21,20 @@ install_requires = [
     "xmltodict",
     "mongoengine",
     "keras",
-    "numpy"
+    "numpy",
+    "tensorflow",
+    "pandas",
+    "nltk",
+    "spacy",
+    "textacy",
+    "tensorboard"
 ]
 
 dev_requires = [
     "autopep8",
+    "rope_py3k",
+    "importmagic",
+    "yapf"
 ]
 
 tests_requires = [
@@ -24,6 +43,7 @@ tests_requires = [
 ]
 
 setup(
+    cmdclass={'install': CustomInstall},
     name='pmcoa_pipeline',
     version=version,
     description="Packages for data pipeline.",
@@ -42,5 +62,8 @@ setup(
     extras_require={
         'dev': dev_requires
     },
+    setup_requires=[
+        'nltk'
+    ],
     test_suite="py.test",
 )
