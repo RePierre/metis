@@ -2,6 +2,7 @@ import os
 import json
 import argparse
 import logging
+import codecs
 from fileparser import FileParser
 from common.datastore import DataStore
 
@@ -16,8 +17,9 @@ def parse_files(xml_path, debug_mode):
 def store_output_to_disk(pubs, output_path):
     for idx, pub in enumerate(pubs):
         with open(os.path.join(output_path, str(idx) + '.json'), 'w') as f:
-            f.write(json.dumps(pub, indent=True, sort_keys=True, ensure_ascii=True))
-
+            # make sure \uxyz chars are removed
+            content = codecs.getdecoder("unicode_escape")(json.dumps(pub, indent=True, sort_keys=True, ensure_ascii=True))
+            f.write(content[0])
 
 def store_output_to_mongo(pubs, host):
     ds = DataStore(host=host)
