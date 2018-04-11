@@ -18,7 +18,6 @@ import numpy as np
 import spacy
 from argparse import ArgumentParser
 import csv
-import sys
 import datetime
 import os.path as path
 import logging
@@ -26,6 +25,8 @@ import math
 
 LOG = logging.getLogger(__name__)
 INPUT_SIZE = 384
+TITLE_TIME_STEPS = 30
+KEYWORDS_TIME_STEPS = 100
 
 nlp = spacy.load('en')
 optimizers = {
@@ -77,8 +78,13 @@ def adjust_size(collection, batch_size):
     return collection[:num_samples]
 
 
-def build_input_node(name, batch_size, time_steps, num_features=INPUT_SIZE):
+def build_sequence_input(name, batch_size, time_steps,
+                         num_features=INPUT_SIZE):
     return Input(batch_shape=(batch_size, time_steps, num_features), name=name)
+
+
+def build_input(name, batch_size, num_features=INPUT_SIZE):
+    return Input(batch_shape=(batch_size, num_features), name=name)
 
 
 def build_optimizer(name, lr):
@@ -91,32 +97,64 @@ def euclidean_distance(y_true, y_pred):
     return K.sqrt(K.sum(K.square(y_true - y_pred)))
 
 
+def build_inputs(args, side):
+    title = build_sequence_input('title-{}'.format(side),
+                                 args.batch_size, TITLE_TIME_STEPS)
+    keywords = build_sequence_input('keywords-{}'.format(side),
+                                    args.batch_size, KEYWORDS_TIME_STEPS)
+    citations = build_input('citations-{}'.format(side),
+                            args.batch_size)
+    affiliations = build_input('affiliations-{}'.format(side),
+                               args.batch_size)
+    topic_score = build_input('topic-score-{}'.format(side),
+                              args.batch_size)
+    return title, keywords, citations, affiliations, topic_score
+
+
 def build_model(args):
     # Define the input nodes
-    text1 = build_input_node('text1', args.batch_size, args.time_steps)
-    text2 = build_input_node('text2', args.batch_size, args.time_steps)
+    text1 = build_sequence_input('text1', args.batch_size, args.time_steps)
+    text2 = build_sequence_input('text2', args.batch_size, args.time_steps)
 
     # Create the shared LSTM node
-    shared_lstm = LSTM(INPUT_SIZE, stateful=args.stateful, name='lstm1')
+    text_lstm = LSTM(INPUT_SIZE, stateful=args.stateful, name='text-lstm')
 
     # Run inputs through shared layer
-    encoded1 = shared_lstm(text1)
-    encoded2 = shared_lstm(text2)
+    encoded1 = text_lstm(text1)
+    encoded2 = text_lstm(text2)
+
+    # Add other inputs
+    title1, keywords1, citations1, affiliations1, topic_score1 = build_inputs(args, 'left')
+    title2, keywords2, citations2, affiliations2, topic_score2 = build_inputs(args, 'right')
+
+    # Run titles through LSTM
+    title_lstm = LSTM(INPUT_SIZE, stateful=args.stateful, name='title-lstm')
+    encoded_title1 = title_lstm(title1)
+    encoded_title2 = title_lstm(title2)
+
+    # Run keywords through LSTM
+    kwd_lstm = LSTM(INPUT_SIZE, stateful=args.stateful, name='keywords-lstm')
+    encoded_kwd1 = kwd_lstm(keywords1)
+    encoded_kwd2 = kwd_lstm(keywords2)
+
+    # Concatenate data for each input
+    concatenated1 = concatenate([encoded1, encoded_title1,
+                                 encoded_kwd1, citations1,
+                                 affiliations1, topic_score1],
+                                axis=0, name='concatenate1')
+    concatenated2 = concatenate([encoded2, encoded_title2,
+                                 encoded_kwd2, citations2,
+                                 affiliations2, topic_score2],
+                                axis=0, name='concatenate2')
 
     # Concatenate outputs to form a tensor of shape (2*batch_size, INPUT_SIZE)
-    concatenated = concatenate([encoded1, encoded2], axis=0, name='concatenate')
+    concatenated = concatenate([concatenated1, concatenated2], axis=0, name='concatenate')
 
-    # Input shape: (2*batch_size, INPUT_SIZE)
-    # Output shape: (2*batch_size, batch_size)
     dense1 = Dense(args.batch_size,
-                   input_shape=(2 * args.batch_size, INPUT_SIZE),
                    activation='linear',
                    name='dense1')(concatenated)
 
-    # Input shape: (2*batch_size, batch_size)
-    # Output shape: (2*batch_size, 1)
     dense2 = Dense(1,
-                   input_shape=(2 * args.batch_size, args.batch_size),
                    activation='linear',
                    name='dense2')(dense1)
 
@@ -128,7 +166,11 @@ def build_model(args):
     # Output shape: (1, 1)
     dense3 = Dense(1, activation='linear', name='dense3')(transpose)
 
-    model = Model(inputs=[text1, text2], outputs=dense3)
+    model = Model(inputs=[text1, title1, keywords1,
+                          citations1, affiliations1, topic_score1,
+                          text2, title2, keywords2,
+                          citations2, affiliations2, topic_score2],
+                  outputs=dense3)
     optimizer = build_optimizer(name=args.optimizer, lr=args.learning_rate)
     model.compile(loss=args.loss,
                   optimizer=optimizer,
