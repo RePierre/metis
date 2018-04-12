@@ -2,16 +2,18 @@ digraph metis{
 	rankdir=LR;
 
 	node[shape=doublesquare] append1, append2;
-	lstm[shape=doublecircle, label="LSTM Cluster"]
+	lstm[shape=doublecircle, label="LSTM"]
+	lstm_title[shape=doublecircle, label="LSTM"]
+	lstm_keywords[shape=doublecircle, label="LSTM"]
 	dense1[shape=doublecircle, label="Dense Layer"]
 	dense2[shape=doublecircle, label="Dense Layer"]
 	transpose[shape=doublecircle, label="Transpose"]
 	output[shape=rect, label="Predictions"]
-	text1[shape=rect, label="Text 1", width=1.5, height=1]
-	text2[shape=rect, label="Text 2", width=1.5, height=1]
+	text1[shape=rect, label="Text 1", width=1.1]
+	text2[shape=rect, label="Text 2", width=1.1]
 	concatenate[shape=box3d, label="Concatenate"]
-	append1[shape=box3d, label="Append"]
-	append2[shape=box3d, label="Append"]
+	append1[shape=box3d, label="Concatenate"]
+	append2[shape=box3d, label="Concatenate"]
 
 	text1->lstm;
 	text2->lstm;
@@ -20,36 +22,33 @@ digraph metis{
 	lstm->append2;
 
 	subgraph input1{
-		joint1[shape=point, style=filled, label=""]
 		title1[label="Title 1", width=1.1]
 		kwd1[label="Keywords 1",width=1.1]
 		citations1[label="Citations 1", width=1.1]
 		affiliations1[label="Affiliations 1", width=1.1]
 		lda_score1[label="LDA score 1", width=1.1]
 
-		title1->joint1[dir=none];
-		kwd1->joint1[dir=none];
-		citations1->joint1[dir=none];
-		affiliations1->joint1[dir=none];
-		lda_score1->joint1[dir=none];
-		joint1->append1[weight=2];
+		title1->lstm_title->append1;
+		kwd1->lstm_keywords->append1;
+
+		citations1->append1;
+		affiliations1->append1;
+		lda_score1->append1;
 	}
 
 
 	subgraph input2{
-		joint2[shape=circle, style=filled, label="", height=0, width=0]
 		title2[label="Title 2", width=1.1]
 		kwd2[label="Keywords 2",width=1.1]
 		citations2[label="Citations 2", width=1.1]
 		affiliations2[label="Affiliations 2", width=1.1]
 		lda_score2[label="LDA score 2", width=1.1]
 
-		title2->joint2[dir=none];
-		kwd2->joint2[dir=none];
-		citations2->joint2[dir=none];
-		affiliations2->joint2[dir=none];
-		lda_score2->joint2[dir=none];
-		joint2->append2[weight=2];
+		title2->lstm_title->append2;
+		kwd2->lstm_keywords->append2;
+		citations2->append2;
+		affiliations2->append2;
+		lda_score2->append2;
 	}
 
 	append1->concatenate;
