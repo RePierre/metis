@@ -1,6 +1,7 @@
 import spacy
 import numpy as np
 import json
+import os
 from keras.preprocessing.sequence import pad_sequences
 
 INPUT_SIZE = 384
@@ -43,28 +44,52 @@ def encode_affiliations(affiliations):
     return encoded_affiliations
 
 
-def read_sample(filename, text_time_steps=2000,
-                title_time_steps=100, keywords_time_steps=100):
+def read_input(input_path, text_time_steps=2000,
+               title_time_steps=100,
+               keywords_time_steps=100,
+               max_files=1000):
+    texts, affiliations, citations, keywords, titles = [], [], [], [], []
+    num_files = 0
+    for root, dirs, files in os.walk(input_path):
+        for file in files:
+            if max_files is not None and num_files >= max_files:
+                break
+            filename = os.path.join(root, file)
+            txt, aff, cit, kw, ttl = read_sample(filename)
+            texts.append(txt)
+            affiliations.append(aff)
+            citations.append(cit)
+            keywords.append(kw)
+            titles.append(ttl)
+            num_files = num_files + 1
+
+    texts = pad_and_reshape(texts, text_time_steps)
+    affiliations = np.reshape(affiliations, (len(affiliations), INPUT_SIZE))
+    citations = np.reshape(citations, (len(citations), INPUT_SIZE))
+    keywords = pad_and_reshape(keywords, keywords_time_steps)
+    titles = pad_and_reshape(titles, title_time_steps)
+    return texts, affiliations, citations, keywords, titles
+
+
+def read_sample(filename):
     with open(filename, 'rt') as f:
         data = json.load(f)
-    text = pad_and_reshape(
-        encode_text(_build_text(data)),
-        text_time_steps)
+    text = encode_text(_build_text(data))
     affiliations = encode_affiliations(_build_affiliations(data))
     citations = encode_citations(_load_citations(data))
-    keywords = pad_and_reshape(
-        encode_keywords(_build_keywords(data)),
-        keywords_time_steps)
-    title = pad_and_reshape(
-        encode_title(data['article_title']),
-        title_time_steps)
+    keywords = encode_keywords(_build_keywords(data))
+    title = encode_title(data['article_title'])
     return title, affiliations, keywords, text, citations
 
 
 def _build_keywords(data):
     keywords = []
     for kw in data['keywords']:
-        keywords.append(kw['#text'])
+        if isinstance(kw, dict) and '#text' in kw:
+            keywords.append(kw['#text'])
+        if isinstance(kw, str):
+            keywords.append(kw)
+
     return ' '.join(keywords)
 
 
