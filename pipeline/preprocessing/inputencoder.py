@@ -56,6 +56,9 @@ def read_input(input_path, text_time_steps=2000,
                 break
             filename = os.path.join(root, file)
             txt, aff, cit, kw, ttl = read_sample(filename)
+            # Ingore file if any of the properties is None
+            if not all([txt, aff, cit, kw, ttl]):
+                continue
             texts.append(txt)
             affiliations.append(aff)
             citations.append(cit)
@@ -74,11 +77,14 @@ def read_input(input_path, text_time_steps=2000,
 def read_sample(filename):
     with open(filename, 'rt') as f:
         data = json.load(f)
-    text = encode_text(_build_text(data))
-    affiliations = encode_affiliations(_build_affiliations(data))
-    citations = encode_citations(_load_citations(data))
-    keywords = encode_keywords(_build_keywords(data))
-    title = encode_title(data['article_title'])
+    try:
+        text = encode_text(_build_text(data))
+        affiliations = encode_affiliations(_build_affiliations(data))
+        citations = encode_citations(_load_citations(data))
+        keywords = encode_keywords(_build_keywords(data))
+        title = encode_title(data['article_title'])
+    except ValueError:
+        return None, None, None, None, None
     return title, affiliations, keywords, text, citations
 
 
@@ -104,8 +110,16 @@ def _build_affiliations(data):
 def _build_text(data):
     text = []
     for section in data['body']:
-        text.append(section['title'])
-        text.append(section['text'])
+        title = section['title']
+        if not isinstance(title, str):
+            raise ValueError('Title is not a string.')
+
+        contents = section['text']
+        if not isinstance(contents, str):
+            raise ValueError('Section content is not a string.')
+
+        text.append(title)
+        text.append(contents)
     return '\n'.join(text)
 
 
