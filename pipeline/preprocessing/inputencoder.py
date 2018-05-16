@@ -57,7 +57,7 @@ def read_input(input_path, text_time_steps=2000,
             filename = os.path.join(root, file)
             txt, aff, cit, kw, ttl = read_sample(filename)
             # Ingore file if any of the properties is None
-            if not all([txt, aff, cit, kw, ttl]):
+            if not _is_valid_article(txt, aff, cit, kw, ttl):
                 continue
             texts.append(txt)
             affiliations.append(aff)
@@ -75,17 +75,34 @@ def read_input(input_path, text_time_steps=2000,
 
 
 def read_sample(filename):
-    with open(filename, 'rt') as f:
-        data = json.load(f)
     try:
+        print('Reading file {}'.format(filename))
+        with open(filename, 'rt') as f:
+            data = json.load(f)
         text = encode_text(_build_text(data))
         affiliations = encode_affiliations(_build_affiliations(data))
         citations = encode_citations(_load_citations(data))
         keywords = encode_keywords(_build_keywords(data))
         title = encode_title(data['article_title'])
+    except json.decoder.JSONDecodeError:
+        return None, None, None, None, None
     except ValueError:
         return None, None, None, None, None
     return title, affiliations, keywords, text, citations
+
+
+def _is_valid_article(text, affiliations, citations, keywords, title):
+    if not text:
+        return False
+    if affiliations is not None and len(affiliations) > 0:
+        return False
+    if not citations:
+        return False
+    if not keywords:
+        return False
+    if not title:
+        return False
+    return True
 
 
 def _build_keywords(data):
