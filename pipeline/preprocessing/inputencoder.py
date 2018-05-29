@@ -46,14 +46,11 @@ def encode_affiliations(affiliations):
 
 def read_input(input_path, text_time_steps=2000,
                title_time_steps=100,
-               keywords_time_steps=100,
-               max_files=1000):
+               keywords_time_steps=100):
     texts, affiliations, citations, keywords, titles = [], [], [], [], []
     num_files = 0
     for root, dirs, files in os.walk(input_path):
         for file in files:
-            if max_files is not None and num_files >= max_files:
-                break
             filename = os.path.join(root, file)
             txt, aff, cit, kw, ttl = read_sample(filename)
             # Ingore file if any of the properties is None
