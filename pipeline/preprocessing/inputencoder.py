@@ -48,7 +48,6 @@ def read_input(input_path, text_time_steps=2000,
                title_time_steps=100,
                keywords_time_steps=100):
     texts, affiliations, citations, keywords, titles = [], [], [], [], []
-    num_files = 0
     for root, dirs, files in os.walk(input_path):
         for file in files:
             filename = os.path.join(root, file)
@@ -61,7 +60,6 @@ def read_input(input_path, text_time_steps=2000,
             citations.append(cit)
             keywords.append(kw)
             titles.append(ttl)
-            num_files = num_files + 1
 
     texts = pad_and_reshape(texts, text_time_steps)
     affiliations = np.reshape(affiliations, (len(affiliations), INPUT_SIZE))
