@@ -88,17 +88,14 @@ def read_sample(filename):
     return title, affiliations, keywords, text, citations
 
 
-def _is_valid_article(text, affiliations, citations, keywords, title):
-    if not text:
-        return False
-    if affiliations is not None and len(affiliations) > 0:
-        return False
-    if not citations:
-        return False
-    if not keywords:
-        return False
-    if not title:
-        return False
+def _is_valid_article(*arrays):
+    for arr in arrays:
+        if arr is None:
+            return False
+        if type(arr) is list and len(arr) == 0:
+            return False
+        if type(arr) is np.ndarray and arr.size == 0:
+            return False
     return True
 
 
