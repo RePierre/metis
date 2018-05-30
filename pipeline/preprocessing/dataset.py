@@ -45,12 +45,7 @@ def _drop_last_item(*arrays):
 
 
 class InputData():
-    """Represents a set of input data.
-
-    """
-
     def __init__(self, texts, affiliations, citations, keywords, titles):
-        super(DataSet, self).__init__()
         self._texts = texts
         self._affiliations = affiliations
         self._citations = citations
