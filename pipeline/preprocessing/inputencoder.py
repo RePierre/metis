@@ -31,7 +31,7 @@ def encode_keywords(keywords):
 
 
 def encode_citations(num_citations):
-    return np.full((INPUT_SIZE,), num_citations)
+    return np.full(INPUT_SIZE, num_citations)
 
 
 def encode_affiliations(affiliations):
