@@ -51,7 +51,7 @@ def read_input(input_path, text_time_steps=2000,
     for root, dirs, files in os.walk(input_path):
         for file in files:
             filename = os.path.join(root, file)
-            txt, aff, cit, kw, ttl = read_sample(filename)
+            ttl, aff, kw, txt, cit = read_sample(filename)
             # Ingore file if any of the properties is None
             if not _is_valid_article(txt, aff, cit, kw, ttl):
                 continue
