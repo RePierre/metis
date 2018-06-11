@@ -37,11 +37,12 @@ def _accomodate_batch_size(batch_size, *arrays):
     for arr in arrays:
         num_samples = int(len(arr) / batch_size) * batch_size
         result.append(arr[:num_samples])
-    return result
+    return tuple(result)
 
 
 def _drop_last_item(*arrays):
-    return [a[:-1] for a in arrays]
+    result = [a[:-1] for a in arrays]
+    return tuple(result)
 
 
 class InputData():
