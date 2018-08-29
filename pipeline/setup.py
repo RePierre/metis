@@ -27,7 +27,8 @@ install_requires = [
     "nltk",
     "spacy",
     "textacy",
-    "tensorboard"
+    "jupyter",
+    "scikit-learn"
 ]
 
 dev_requires = [
