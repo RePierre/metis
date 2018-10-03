@@ -53,7 +53,7 @@ def parse_arguments():
     parser.add_argument('--num-topics',
                         help='Number of topics to infer.',
                         required=False,
-                        default=10,
+                        default=1000,
                         type=int)
     parser.add_argument('--num-features',
                         help='Number of features.',
