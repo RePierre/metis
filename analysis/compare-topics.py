@@ -1,4 +1,17 @@
 from argparse import ArgumentParser
+import re
+
+pattern = re.compile('Topic #(?P<num>\d+):(?P<words>.+)')
+
+
+def parse_file(file_name):
+    with open(file_name) as f:
+        for line in f:
+            m = pattern.search(line)
+            if m:
+                num = int(m.group('num'))
+                words = m.group('words').strip().split()
+                yield (num, words)
 
 
 def run(args):
