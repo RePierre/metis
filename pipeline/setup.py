@@ -28,7 +28,8 @@ install_requires = [
     "spacy",
     "textacy",
     "jupyter",
-    "scikit-learn"
+    "scikit-learn",
+    "gensim"
 ]
 
 dev_requires = [
