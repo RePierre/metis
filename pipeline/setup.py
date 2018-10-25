@@ -29,7 +29,8 @@ install_requires = [
     "textacy",
     "jupyter",
     "scikit-learn",
-    "gensim"
+    "gensim",
+    "matplotlib"
 ]
 
 dev_requires = [
