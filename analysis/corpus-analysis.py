@@ -36,12 +36,12 @@ def run(args, logger):
     logger.debug('Starting Truncated SVD analysis on Bag-Of-Words representation.')
     results = run_tSVD_analysis(bow)
     logger.debug('Truncated SVD analysis finished.')
-    save_results(results, args.tsvd_output, logger)
+    save_results(results, args.tsvd_bow_output, logger)
 
     logger.debug('Starting Truncated SVD analysis on TF-IDS representation')
     results = run_tSVD_analysis(tfidf)
     logger.debug('Truncated SVD analysis finished.')
-    save_results(results, args.tfidf_output, logger)
+    save_results(results, args.tfidf_tsvd_output, logger)
 
     logger.debug('Starting LDA analysis on BoW representation with {} topics.'
                  .format(args.num_topics))
@@ -74,22 +74,22 @@ def parse_arguments():
                         help='Number of topics for LDA analysis.',
                         default=150,
                         type=int)
-    parser.add_argument('--tsvd-output',
+    parser.add_argument('--tsvd-bow-output',
                         help='File in which to store the results of Truncated SVD analysis on BoW.',
                         required=False,
-                        default='../data/tsvd-output.csv')
-    parser.add_argument('--tfidf-output',
+                        default='../data/corpus-analysis/bow-tsvd-output.csv')
+    parser.add_argument('--tfidf-tsvd-output',
                         help='File in which to store the results of Truncated SVD analysis on TF-IDF,',
                         required=False,
-                        default='../data/tfidf-output.csv')
+                        default='../data/corpus-analysis/tfidf-tsvd-output.csv')
     parser.add_argument('--bow-lda-output',
                         help='File in which to store the results of LDA analysis on BoW representation.',
                         required=False,
-                        default='../data/bow-lda-output.csv')
+                        default='../data/corpus-analysis/bow-lda-output.csv')
     parser.add_argument('--tfidf_lda_output',
                         help='File in which to store the results of LDA analysis on TF-IDF representation.',
                         required=False,
-                        default='../data/tfidf-lda-output.csv')
+                        default='../data/corpus-analysis/tfidf-lda-output.csv')
     parser.add_argument('--log-file',
                         help='The output file for logging.',
                         required=False,
