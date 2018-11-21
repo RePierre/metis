@@ -30,8 +30,12 @@ def run_LDA_analysis(num_topics, doc_term_matrix):
 def run(args, logger):
     stop_words = 'english'
 
+    logger.debug('Computing BoW document-term matrix.')
     bow = get_doc_term_matrix(args.corpus_dir, CountVectorizer(stop_words=stop_words))
+    logger.debug('Done.')
+    logger.debug('Computing TF-IDF document-term matrix.')
     tfidf = get_doc_term_matrix(args.corpus_dir, TfidfVectorizer(stop_words=stop_words))
+    logger.debug('Done.')
 
     logger.debug('Starting Truncated SVD analysis on Bag-Of-Words representation.')
     results = run_tSVD_analysis(bow)
