@@ -6,59 +6,55 @@ from corpus import Corpus
 from logutils import create_logger
 from argparse import ArgumentParser
 from pandas import DataFrame
-
-
-def get_doc_term_matrix(corpus_dir, vectorizer):
-    corpus = Corpus(corpus_dir)
-    doc_term_matrix = vectorizer.fit_transform(corpus)
-    return doc_term_matrix.toarray()
-
-
-def run_tSVD_analysis(doc_term_matrix):
-    t_svd = TruncatedSVD()
-    t_svd.fit(doc_term_matrix)
-    results = t_svd.transform(doc_term_matrix)
-    return results
-
-
-def run_LDA_analysis(num_topics, doc_term_matrix):
-    lda = LatentDirichletAllocation(n_components=num_topics, learning_method='batch')
-    results = lda.fit_transform(doc_term_matrix)
-    return results
+import sklearn.pipeline as pipeline
 
 
 def run(args, logger):
     stop_words = 'english'
 
-    logger.debug('Computing BoW document-term matrix.')
-    bow = get_doc_term_matrix(args.corpus_dir, CountVectorizer(stop_words=stop_words))
-    logger.debug('Done.')
-    logger.debug('Computing TF-IDF document-term matrix.')
-    tfidf = get_doc_term_matrix(args.corpus_dir, TfidfVectorizer(stop_words=stop_words))
-    logger.debug('Done.')
-
-    logger.debug('Starting Truncated SVD analysis on Bag-Of-Words representation.')
-    results = run_tSVD_analysis(bow)
-    logger.debug('Truncated SVD analysis finished.')
-    save_results(results, args.tsvd_bow_output, logger)
-
-    logger.debug('Starting Truncated SVD analysis on TF-IDS representation')
-    results = run_tSVD_analysis(tfidf)
-    logger.debug('Truncated SVD analysis finished.')
-    save_results(results, args.tfidf_tsvd_output, logger)
-
     logger.debug('Starting LDA analysis on BoW representation with {} topics.'
                  .format(args.num_topics))
-    # Clip negative values from Bag-of-Words
-    results = run_LDA_analysis(args.num_topics, bow.clip(min=0))
+    bow_lda_pipeline = pipeline.make_pipeline(
+        CountVectorizer(stop_words=stop_words),
+        LatentDirichletAllocation(n_components=args.num_topics, learning_method='batch')
+    )
+    results = bow_lda_pipeline.fit_transform(Corpus(args.corpus_dir))
     logger.debug('LDA analysis on BoW representation finished.')
     save_results(results, args.bow_lda_output, logger)
 
+    del results
+
     logger.debug('Starting LDA analysis on TF-IDF representation with {} topics.'
                  .format(args.num_topics))
-    results = run_LDA_analysis(args.num_topics, tfidf)
+    tfidf_lda_pipeline = pipeline.make_pipeline(
+        TfidfVectorizer(stop_words=stop_words),
+        LatentDirichletAllocation(n_components=args.num_topics, learning_method='batch')
+    )
+    results = tfidf_lda_pipeline.fit_transform(Corpus(args.corpus_dir))
     logger.debug('LDA analysis on TF-IDF representation finished.')
     save_results(results, args.tfidf_lda_output, logger)
+
+    del results
+
+    logger.debug('Starting Truncated SVD analysis on Bag-Of-Words representation.')
+    bow_tsvd_pipeline = pipeline.make_pipeline(
+        CountVectorizer(stop_words=stop_words),
+        TruncatedSVD()
+    )
+    results = bow_tsvd_pipeline.fit_transform(Corpus(args.corpus_dir))
+    logger.debug('Truncated SVD analysis finished.')
+    save_results(results, args.tsvd_bow_output, logger)
+
+    del results
+
+    logger.debug('Starting Truncated SVD analysis on TF-IDS representation')
+    tfidf_tsvd_pipeline = pipeline.make_pipeline(
+        TfidfVectorizer(stop_words=stop_words),
+        TruncatedSVD()
+    )
+    results = tfidf_tsvd_pipeline.fit_transform(Corpus(args.corpus_dir))
+    logger.debug('Truncated SVD analysis finished.')
+    save_results(results, args.tfidf_tsvd_output, logger)
 
     logger.debug("That's all folks!")
 
