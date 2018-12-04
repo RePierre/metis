@@ -73,7 +73,8 @@ def save_results(results, output_file, logger):
 def parse_arguments():
     parser = ArgumentParser()
     parser.add_argument('--corpus-dir',
-                        help='The directory with parsed articles.')
+                        help='The directory with parsed articles.',
+                        required=True)
     parser.add_argument('--num-topics',
                         help='Number of topics for LDA analysis.',
                         default=150,
