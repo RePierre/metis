@@ -18,7 +18,7 @@ def run(args, logger):
         CountVectorizer(stop_words=stop_words),
         LatentDirichletAllocation(n_components=args.num_topics, learning_method='batch')
     )
-    results = bow_lda_pipeline.fit_transform(Corpus(args.corpus_dir))
+    results = bow_lda_pipeline.fit_transform(Corpus(args.corpus_dir, logger))
     logger.debug('LDA analysis on BoW representation finished.')
     save_results(results, args.bow_lda_output, logger)
 
@@ -30,7 +30,7 @@ def run(args, logger):
         TfidfVectorizer(stop_words=stop_words),
         LatentDirichletAllocation(n_components=args.num_topics, learning_method='batch')
     )
-    results = tfidf_lda_pipeline.fit_transform(Corpus(args.corpus_dir))
+    results = tfidf_lda_pipeline.fit_transform(Corpus(args.corpus_dir, logger))
     logger.debug('LDA analysis on TF-IDF representation finished.')
     save_results(results, args.tfidf_lda_output, logger)
 
@@ -41,7 +41,7 @@ def run(args, logger):
         CountVectorizer(stop_words=stop_words),
         TruncatedSVD()
     )
-    results = bow_tsvd_pipeline.fit_transform(Corpus(args.corpus_dir))
+    results = bow_tsvd_pipeline.fit_transform(Corpus(args.corpus_dir, logger))
     logger.debug('Truncated SVD analysis finished.')
     save_results(results, args.tsvd_bow_output, logger)
 
@@ -52,7 +52,7 @@ def run(args, logger):
         TfidfVectorizer(stop_words=stop_words),
         TruncatedSVD()
     )
-    results = tfidf_tsvd_pipeline.fit_transform(Corpus(args.corpus_dir))
+    results = tfidf_tsvd_pipeline.fit_transform(Corpus(args.corpus_dir, logger))
     logger.debug('Truncated SVD analysis finished.')
     save_results(results, args.tfidf_tsvd_output, logger)
 
