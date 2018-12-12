@@ -44,7 +44,7 @@ def run(args, logger):
         LatentDirichletAllocation(batch_size=256,
                                   learning_method='online'),
         cv=None,
-        n_jobs=-1,
+        n_jobs=args.num_jobs,
         param_grid=search_params,
         return_train_score=False,
         verbose=10
@@ -100,6 +100,12 @@ def parse_arguments():
                         help='The begining of the range for learning decay.',
                         required=True,
                         type=float)
+
+    parser.add_argument('--num-jobs',
+                        help='Number of jobs to run in parallel. Default is 1; -1 means use all processors.',
+                        type=int,
+                        required=False,
+                        default=1)
 
     parser.add_argument('--log-file',
                         help='The output file for logging.',
