@@ -9,7 +9,8 @@ class Corpus:
     def __iter__(self):
         self._log_debug_message('Start iterating over corpus directory {}.'
                                 .format(self._corpus_dir))
-        read_corpus(self._corpus_dir)
+        for text in read_corpus(self._corpus_dir):
+            yield text
         self._log_debug_message('Finished iterating over corpus directory {}.'
                                 .format(self._corpus_dir))
 
