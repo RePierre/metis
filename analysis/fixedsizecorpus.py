@@ -11,7 +11,11 @@ class FixedSizeCorpus:
 
     def __iter__(self):
         if not self._random_order:
-            read_corpus(self._corpus_dir)
+            num_files = self._num_files
+            for text in read_corpus(self._corpus_dir):
+                if num_files > 0:
+                    num_files -= 1
+                    yield text
 
     def _log_debug_message(self, message):
         if self._logger:
