@@ -1,4 +1,6 @@
-from corpusutils import read_corpus
+from corpusutils import read_corpus, get_file_names, get_file_text
+import numpy as np
+import pdb
 
 
 class FixedSizeCorpus:
@@ -16,6 +18,11 @@ class FixedSizeCorpus:
                 if num_files > 0:
                     num_files -= 1
                     yield text
+        else:
+            files = [f for f in get_file_names(self._corpus_dir)]
+            np.random.shuffle(files)
+            for f in files[:self._num_files]:
+                yield get_file_text(f)
 
     def _log_debug_message(self, message):
         if self._logger:
