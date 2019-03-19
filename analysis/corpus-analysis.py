@@ -1,4 +1,3 @@
-import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.decomposition import TruncatedSVD
 from sklearn.decomposition import LatentDirichletAllocation
@@ -111,7 +110,7 @@ def parse_arguments():
     parser.add_argument('--run-pipeline',
                         help='The specific pipeline to run. If no argument is provider all pipelines are executed.',
                         required=False,
-                        type=lambda pipeline: Pipelines[pipeline.replace('-','_').upper()],
+                        type=lambda pipeline: Pipelines[pipeline.replace('-', '_').upper()],
                         default=Pipelines.ALL,
                         choices=list(Pipelines))
     return parser.parse_args()
